@@ -1,0 +1,14 @@
+{
+  "name": "ufc-bros-picks-pool",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8125",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 8125"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  }
+}
