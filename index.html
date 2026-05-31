@@ -18700,6 +18700,7 @@ function shouldUseEmbeddedPreviewHost(){
   var id=String(getPoolId()||"").toLowerCase();
   var params=new URLSearchParams(window.location.search);
   var previewIntent=params.get("previewCard")==="ufc328"||!!params.get("pool");
+  if(params.get("previewCard")==="ufc328"&&params.get("embeddedPreview")==="1")return true;
   var trustedPreviewHost=isLocalPreviewHost()||params.get("embeddedPreview")==="1";
   return trustedPreviewHost&&previewIntent&&(id.indexOf("fightlocks")===0||id==="dante-casuals")&&!forceNewProfile&&!godModeRequested;
 }
@@ -18771,6 +18772,7 @@ function setLandingRouteActive(on){
   if(document.body)document.body.classList.toggle("landing-route-active",!!on);
 }
 function restoreLandingRouteFromHash(){
+  if(typeof embeddedUfc328Preview!=="undefined"&&embeddedUfc328Preview)return false;
   var route=landingRouteFromHash();
   if(!route)return false;
   if(route.type==="public"&&typeof setLandingPublicSection==="function"){
@@ -32192,6 +32194,9 @@ if(localPreviewOfflineMode&&embeddedUfc328Preview){
   authReady=true;
   currentUser=null;
   embeddedPreviewApplied=applyEmbeddedUfc328PreviewData();
+  setTimeout(applyEmbeddedUfc328PreviewData,0);
+  setTimeout(applyEmbeddedUfc328PreviewData,500);
+  setTimeout(forceEmbeddedPreviewPicksTab,1000);
 }else if(localDemoMode){
   activateLocalDemoMode();
 }else{
