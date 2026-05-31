@@ -6,7 +6,10 @@
   directory = "netlify/functions"
 
 [functions."scheduled-fighter-lines"]
-  schedule = "0 * * * *"
+  schedule = "0 12 * * *"
+
+[functions."sync-sportsdata-events"]
+  schedule = "15 10 * * *"
 
 [[headers]]
   for = "/*"
