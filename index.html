@@ -16759,7 +16759,7 @@ html.local-device-preview-active .device-preview-stage{
           <iframe
             class="real-pool-preview-frame"
             title="Interactive Fight Locks pool preview"
-            src="?pool=dante-casuals&host=Dante&previewCard=ufc328&v=stable-preview-art-20260527#picks"
+            src="?pool=dante-casuals&host=Dante&previewCard=ufc328&embeddedPreview=1&v=stable-preview-art-20260527#picks"
             scrolling="yes"
             loading="eager"></iframe>
           <div class="real-pool-scroll-capture" aria-hidden="true"></div>
@@ -18404,7 +18404,7 @@ function isLocalLikeHostName(host){
 }
 const localPreviewOfflineMode = (function(){
   var params=new URLSearchParams(window.location.search);
-  return params.get("previewCard")==="ufc328"&&isLocalLikeHostName(window.location.hostname);
+  return params.get("previewCard")==="ufc328"&&(isLocalLikeHostName(window.location.hostname)||params.get("embeddedPreview")==="1");
 })();
 const localDemoMode = (function(){
   var params=new URLSearchParams(window.location.search);
@@ -18700,7 +18700,8 @@ function shouldUseEmbeddedPreviewHost(){
   var id=String(getPoolId()||"").toLowerCase();
   var params=new URLSearchParams(window.location.search);
   var previewIntent=params.get("previewCard")==="ufc328"||!!params.get("pool");
-  return isLocalPreviewHost()&&previewIntent&&(id.indexOf("fightlocks")===0||id==="dante-casuals")&&!forceNewProfile&&!godModeRequested;
+  var trustedPreviewHost=isLocalPreviewHost()||params.get("embeddedPreview")==="1";
+  return trustedPreviewHost&&previewIntent&&(id.indexOf("fightlocks")===0||id==="dante-casuals")&&!forceNewProfile&&!godModeRequested;
 }
 if(invitedPoolId){
   (function(){
@@ -19034,6 +19035,12 @@ function renderLandingAuthNav(){
   nav.innerHTML=actions;
 }
 renderLandingAuthNav();
+setTimeout(function(){
+  if(!authReady&&publicLanding){
+    authReady=true;
+    renderLandingAuthNav();
+  }
+},4500);
 function profileNameParts(profile){
   profile=profile||{};
   var split=splitFullName(profile.fullName||"");

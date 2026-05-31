@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 8125",
-    "build": "vite build",
+    "build": "vite build && cp -R public dist/public",
     "preview": "vite preview --host 127.0.0.1 --port 8125"
   },
   "devDependencies": {
