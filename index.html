@@ -16755,11 +16755,11 @@ html.local-device-preview-active .device-preview-stage{
 
     <div class="setup-preview" id="setupPreview">
       <div class="preview-grid preview-real landing-preview-grid">
-        <div class="preview-card preview-real-picks landing-preview-card real-pool-frame-card preview-frame-loading">
+        <div class="preview-card preview-real-picks landing-preview-card real-pool-frame-card preview-frame-ready">
           <iframe
             class="real-pool-preview-frame"
             title="Interactive Fight Locks pool preview"
-            src="?pool=dante-casuals&host=Dante&previewCard=ufc328&embeddedPreview=1&v=stable-preview-art-20260527#picks"
+            src="/index.html?pool=dante-casuals&host=Dante&previewCard=ufc328&embeddedPreview=1&v=stable-preview-art-20260527#picks"
             scrolling="yes"
             loading="eager"></iframe>
           <div class="real-pool-scroll-capture" aria-hidden="true"></div>
@@ -21735,7 +21735,7 @@ function installLandingPreviewIframeScrollBridge(){
   function attach(frame){
     if(!frame||frame.__fightLocksPreviewScrollAttached)return;
     var frameCard=frame.closest&&frame.closest(".real-pool-frame-card");
-    if(frameCard&&!frameCard.classList.contains("preview-frame-ready"))frameCard.classList.add("preview-frame-loading");
+    if(frameCard)frameCard.classList.add("preview-frame-ready");
     var lastOuterTouchY=null;
     function revealFrameWhenReady(){
       if(!frameCard||frame.__fightLocksPreviewRevealTimer)return;
