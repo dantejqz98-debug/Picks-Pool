@@ -16720,7 +16720,7 @@ html.local-device-preview-active .device-preview-stage{
       <div class="landing-auth" id="landingAuthNav">
         <button type="button" class="landing-signup" onclick="showLandingOnboarding('join')">Join a Pool</button>
         <button type="button" class="landing-signup" onclick="showLandingOnboarding('start')">Start a Pool</button>
-        <button type="button" class="landing-login" disabled>Checking...</button>
+        <button type="button" class="landing-login" onclick="showLandingOnboarding('login')">Log In</button>
       </div>
     </nav>
 
@@ -19059,9 +19059,7 @@ function renderLandingAuthNav(){
     actions+="<button type=\"button\" class=\"landing-login\" onclick=\"showMyPoolsView()\">My Pools</button></div>"
       +"<div class=\"landing-account-row\"><span>Hello, "+escapeHtml(landingAccountFirstName())+"</span><span aria-hidden=\"true\">·</span><button type=\"button\" class=\"landing-account-signout\" onclick=\"signOutAccount()\">Sign Out</button></div>";
   }else{
-    actions+=!authReady
-      ?"<button type=\"button\" class=\"landing-login\" disabled>Checking...</button></div>"
-      :"<button type=\"button\" class=\"landing-login\" onclick=\"showLandingOnboarding('login')\">Log In</button></div>";
+    actions+="<button type=\"button\" class=\"landing-login\" onclick=\"showLandingOnboarding('login')\">Log In</button></div>";
   }
   nav.innerHTML=actions;
 }
