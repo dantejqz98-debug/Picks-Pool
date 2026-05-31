@@ -23376,15 +23376,16 @@ function renderGodOddsPanel(){
   var el=document.getElementById("godOddsList"), count=document.getElementById("godOddsCount");
   if(!el)return;
   var lines=globalFighterLines&&globalFighterLines.fights?globalFighterLines.fights:{};
-  var matched=fights.filter(function(f){return !!lines[f.id];});
-  if(count)count.textContent=matched.length+" / "+fights.length+" matched";
+  var oddsFights=godOddsRefreshFights();
+  var matched=oddsFights.filter(function(f){return !!lines[f.id];});
+  if(count)count.textContent=matched.length+" / "+oddsFights.length+" matched";
   if(!matched.length){
     el.innerHTML=godEmpty("No global fighter lines saved yet. Refresh lines after adding THE_ODDS_API_KEY in Netlify.");
     return;
   }
   var source=globalFighterLines.source||"The Odds API";
   var stamp=globalFighterLines.updatedAt?godTime(globalFighterLines.updatedAt):"No timestamp";
-  el.innerHTML='<div class="god-results-note">Source: '+godEsc(source)+' · Last updated: '+godEsc(stamp)+'</div><div class="god-odds-list">'+fights.map(function(f){
+  el.innerHTML='<div class="god-results-note">Source: '+godEsc(source)+' · Last updated: '+godEsc(stamp)+'</div><div class="god-odds-list">'+oddsFights.map(function(f){
     var line=lines[f.id];
     if(!line)return '<div class="god-odds-row"><span>'+godEsc(f.f1.split(" ").pop()+" vs "+f.f2.split(" ").pop())+'</span><span>Not matched</span></div>';
     return '<div class="god-odds-row"><span>'+godEsc(f.f1.split(" ").pop()+" vs "+f.f2.split(" ").pop())+'</span><span>'+godEsc(f.f1.split(" ").pop()+" "+fmt(parseInt(line.o1))+" · "+f.f2.split(" ").pop()+" "+fmt(parseInt(line.o2)))+'</span></div>';
@@ -23393,6 +23394,17 @@ function renderGodOddsPanel(){
 function normalizeOddsPayload(payload){
   payload=payload||{};
   return {eventId:payload.eventId||DEFAULT_EVENT_ID,source:payload.source||"The Odds API",updatedAt:payload.updatedAt||new Date().toISOString(),fights:payload.fights||{},rawMatchedCount:payload.matchedCount||0,unmatched:payload.unmatched||[]};
+}
+function godOddsRefreshEvent(){
+  if(godModeRequested&&typeof getActiveEventId==="function"&&typeof getEventById==="function"){
+    var event=getEventById(getActiveEventId());
+    if(event&&Array.isArray(event.fights)&&event.fights.length)return event;
+  }
+  return {eventId:DEFAULT_EVENT_ID,fights:fights};
+}
+function godOddsRefreshFights(){
+  var event=godOddsRefreshEvent();
+  return (Array.isArray(event.fights)&&event.fights.length?event.fights:fights).filter(function(f){return f&&f.id&&f.f1&&f.f2;});
 }
 function oddsRefreshErrorMessage(e){
   var msg=String(e&&e.message||"Could not refresh fighter lines.");
@@ -24548,7 +24560,9 @@ window.refreshGodFighterLines=async function(){
   setGodStatus("Refreshing fighter lines...");
   setGodOddsStatus("Refreshing fighter lines from The Odds API...");
   try{
-    var res=await fetch("/.netlify/functions/refresh-fighter-lines",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({eventId:DEFAULT_EVENT_ID})});
+    var oddsEvent=godOddsRefreshEvent();
+    var oddsFights=godOddsRefreshFights().map(function(f){return {id:f.id,f1:f.f1,f2:f.f2};});
+    var res=await fetch("/.netlify/functions/refresh-fighter-lines",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({eventId:oddsEvent.eventId||DEFAULT_EVENT_ID,fights:oddsFights})});
     var text=await res.text(), payload={};
     try{payload=JSON.parse(text||"{}");}catch(e){payload={error:text};}
     if(!res.ok)throw new Error(payload.error||"Could not refresh fighter lines");

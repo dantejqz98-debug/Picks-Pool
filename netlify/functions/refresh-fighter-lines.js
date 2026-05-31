@@ -25,8 +25,11 @@ exports.handler = async function(event) {
   }
 
   try {
+    const body = parseBody(event.body);
+    const requestedFights = normalizeRequestFights(body.fights);
+    const eventId = body.eventId || EVENT_ID;
     const odds = await fetchOdds(apiKey);
-    const payload = matchOddsToFights(odds);
+    const payload = matchOddsToFights(odds, requestedFights, eventId);
 
     if ((event.scheduled || event.httpMethod === "SCHEDULED") && process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
       await saveToFirestore(payload);
@@ -45,6 +48,24 @@ exports.handler = async function(event) {
 exports.refreshAndSaveToFirebase = async function() {
   return exports.handler({ httpMethod: "SCHEDULED", scheduled: true });
 };
+
+function parseBody(raw) {
+  try {
+    return raw ? JSON.parse(raw) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function normalizeRequestFights(fights) {
+  if (!Array.isArray(fights)) return FIGHTS;
+  const normalized = fights.map((fight, index) => ({
+    id: String(fight.id || `fight-${index + 1}`),
+    f1: String(fight.f1 || fight.fighter1 || "").trim(),
+    f2: String(fight.f2 || fight.fighter2 || "").trim()
+  })).filter((fight) => fight.id && fight.f1 && fight.f2);
+  return normalized.length ? normalized : FIGHTS;
+}
 
 async function fetchOdds(apiKey) {
   const url = new URL(`https://api.the-odds-api.com/v4/sports/${SPORT_KEY}/odds`);
@@ -68,10 +89,10 @@ async function fetchOdds(apiKey) {
   return Array.isArray(data) ? data : [];
 }
 
-function matchOddsToFights(events) {
+function matchOddsToFights(events, sourceFights, eventId) {
   const fights = {};
   const unmatched = [];
-  FIGHTS.forEach((fight) => {
+  sourceFights.forEach((fight) => {
     const match = findEventForFight(events, fight);
     if (!match) {
       unmatched.push({ id: fight.id, f1: fight.f1, f2: fight.f2 });
@@ -95,7 +116,7 @@ function matchOddsToFights(events) {
     };
   });
   return {
-    eventId: EVENT_ID,
+    eventId,
     source: "The Odds API",
     sourceSport: SPORT_KEY,
     updatedAt: new Date().toISOString(),
