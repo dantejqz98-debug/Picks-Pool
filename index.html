@@ -13,6 +13,10 @@ try{
   var fightLocksBootParams=new URLSearchParams(window.location.search);
   if(fightLocksBootParams.get("previewCard")==="ufc328"){
     document.documentElement.classList.add("embedded-local-preview");
+    if(fightLocksBootParams.get("embeddedPreview")==="1"){
+      document.documentElement.classList.add("embedded-ufc328-preview-root");
+      window.__fightLocksEmbeddedUfc328PreviewIntent=true;
+    }
     if(fightLocksBootParams.get("phoneDesignPreview")==="1")document.documentElement.classList.add("embedded-phone-design-preview");
   }
 }catch(e){}
@@ -4582,6 +4586,27 @@ body.god-mode .god-mode-view{
 .landing-route-active .pool-shell,
 .landing-route-active #memberGate,
 .landing-route-active #deadlineBanner{
+  display:none!important;
+}
+html.embedded-ufc328-preview-root body #setupHome,
+html.embedded-ufc328-preview-root body #memberGate,
+html.embedded-ufc328-preview-root body .landing-nav,
+html.embedded-ufc328-preview-root body .landing-footer,
+html.embedded-ufc328-preview-root body .landing-public-section,
+html.embedded-ufc328-preview-root body .landing-hero{
+  display:none!important;
+}
+html.embedded-ufc328-preview-root body.app-profile-locked .tabs,
+html.embedded-ufc328-preview-root body.landing-route-active .tabs,
+html.embedded-ufc328-preview-root body .tabs{
+  display:block!important;
+}
+html.embedded-ufc328-preview-root body.app-profile-locked #view-picks.view,
+html.embedded-ufc328-preview-root body.landing-route-active #view-picks.view,
+html.embedded-ufc328-preview-root body #view-picks.view{
+  display:block!important;
+}
+html.embedded-ufc328-preview-root body .view:not(#view-picks){
   display:none!important;
 }
 .app-profile-locked #deadlineBanner{display:none!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
@@ -18660,6 +18685,10 @@ const publicLanding = !localDemoMode&&!invitedPoolId&&!forceNewProfile&&!godMode
 const cleanFirstVisit = (forceNewProfile&&!invitedPoolId&&!godModeRequested)||publicLanding;
 const invitedHostName = new URLSearchParams(window.location.search).get("host")||"";
 const embeddedUfc328Preview = new URLSearchParams(window.location.search).get("previewCard")==="ufc328" && shouldUseEmbeddedPreviewHost();
+function isEmbeddedUfc328PreviewRequest(){
+  var params=new URLSearchParams(window.location.search);
+  return params.get("previewCard")==="ufc328"&&params.get("embeddedPreview")==="1";
+}
 const devAdminPreview = !godModeRequested&&window.location.hostname==="127.0.0.1"&&currentPoolId==="ai-pool-4w5h"&&new URLSearchParams(window.location.search).get("preview")==="aiaiai";
 function routeDebugState(extra){
   if(new URLSearchParams(window.location.search).get("debugFightLocks")!=="1")return;
@@ -26480,10 +26509,11 @@ function embeddedUfc328Entries(){
   return names.map(function(name,index){return embeddedUfc328Entry(name,index,banners[index%banners.length],index===0);}).sort(function(a,b){return calcScore(b)-calcScore(a)||(a.name||"").localeCompare(b.name||"");});
 }
 function applyEmbeddedUfc328PreviewData(){
-  if(!embeddedUfc328Preview)return false;
+  if(!embeddedUfc328Preview&&!isEmbeddedUfc328PreviewRequest())return false;
   currentPoolExists=true;
   currentPoolChecked=true;
   currentPoolMeta={poolId:currentPoolId,poolCode:"dante-casuals",poolName:"Dante and the Casuals",joinCode:"casuals328"};
+  document.documentElement.classList.add("embedded-ufc328-preview-root");
   document.body.classList.add("embedded-readonly-preview");
   currentMember={memberId:"ufc328-preview-dante",authUid:"ufc328-preview-dante",poolId:currentPoolId,firstName:"Dante",lastName:"Preview",fullName:"Dante Preview",username:"Dante",usernameKey:"dante",name:"Dante",email:"dante.jqz98@gmail.com",localOnly:true,syncPending:true};
   picksVisible=true;
@@ -26527,13 +26557,23 @@ function applyEmbeddedUfc328PreviewData(){
   return true;
 }
 function forceEmbeddedPreviewPicksTab(){
-  if(!embeddedUfc328Preview)return;
+  if(!embeddedUfc328Preview&&!isEmbeddedUfc328PreviewRequest())return;
   setLandingRouteActive(false);
+  document.documentElement.classList.add("embedded-ufc328-preview-root");
   var shell=document.getElementById("setupHome");
-  if(shell)shell.classList.remove("onboarding-active","my-pools-active");
+  if(shell){
+    shell.classList.remove("onboarding-active","my-pools-active");
+    shell.hidden=true;
+    shell.style.display="none";
+  }
   var gate=document.getElementById("memberGate");
-  if(gate)gate.classList.add("joined");
+  if(gate){
+    gate.classList.add("joined");
+    gate.hidden=true;
+    gate.style.display="none";
+  }
   document.body.classList.remove("app-profile-locked","landing-route-active");
+  document.body.classList.add("embedded-readonly-preview");
   var picksView=document.getElementById("view-picks");
   if(picksView){
     document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active");});
@@ -32190,13 +32230,22 @@ applyPayoutSettings(payoutSettings,false);
 renderPoolPreviewContent();
 renderPoolShell();
 var embeddedPreviewApplied=false;
-if(localPreviewOfflineMode&&embeddedUfc328Preview){
+if(localPreviewOfflineMode&&(embeddedUfc328Preview||isEmbeddedUfc328PreviewRequest())){
   authReady=true;
   currentUser=null;
   embeddedPreviewApplied=applyEmbeddedUfc328PreviewData();
   setTimeout(applyEmbeddedUfc328PreviewData,0);
   setTimeout(applyEmbeddedUfc328PreviewData,500);
   setTimeout(forceEmbeddedPreviewPicksTab,1000);
+  (function(){
+    var previewGuardRuns=0;
+    var previewGuard=setInterval(function(){
+      previewGuardRuns++;
+      applyEmbeddedUfc328PreviewData();
+      forceEmbeddedPreviewPicksTab();
+      if(previewGuardRuns>=24)clearInterval(previewGuard);
+    },250);
+  })();
 }else if(localDemoMode){
   activateLocalDemoMode();
 }else{
