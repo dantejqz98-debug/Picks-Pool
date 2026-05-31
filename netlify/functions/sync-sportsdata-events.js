@@ -111,6 +111,7 @@ function normalizeSportsDataEvent(event) {
   const fights = Array.isArray(event.Fights) ? event.Fights : [];
   const normalizedFights = fights
     .slice()
+    .filter(shouldImportFight)
     .sort((a, b) => numeric(a.Order, 999) - numeric(b.Order, 999))
     .map((fight, index) => normalizeSportsDataFight(fight, index, eventId))
     .filter(Boolean);
@@ -134,6 +135,15 @@ function normalizeSportsDataEvent(event) {
     sourceUpdatedAt: new Date().toISOString(),
     fights: normalizedFights
   };
+}
+
+function shouldImportFight(fight) {
+  if (!fight) return false;
+  const status = String(fight.Status || fight.status || fight.FightStatus || "").toLowerCase();
+  const canceledStatuses = ["canceled", "cancelled", "scratched", "postponed", "removed", "off", "deleted"];
+  if (canceledStatuses.some((value) => status.includes(value))) return false;
+  if (fight.Active === false || fight.IsCanceled === true || fight.Cancelled === true || fight.Canceled === true) return false;
+  return true;
 }
 
 function normalizeSportsDataFight(fight, index, eventId) {
