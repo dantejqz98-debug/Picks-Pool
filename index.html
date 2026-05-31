@@ -18689,6 +18689,9 @@ function isEmbeddedUfc328PreviewRequest(){
   var params=new URLSearchParams(window.location.search);
   return params.get("previewCard")==="ufc328"&&params.get("embeddedPreview")==="1";
 }
+function isUfc328PreviewMode(){
+  return !!(typeof embeddedUfc328Preview!=="undefined"&&embeddedUfc328Preview)||isEmbeddedUfc328PreviewRequest();
+}
 const devAdminPreview = !godModeRequested&&window.location.hostname==="127.0.0.1"&&currentPoolId==="ai-pool-4w5h"&&new URLSearchParams(window.location.search).get("preview")==="aiaiai";
 function routeDebugState(extra){
   if(new URLSearchParams(window.location.search).get("debugFightLocks")!=="1")return;
@@ -20356,7 +20359,7 @@ function canSeeAdminUpgradeControls(){
 }
 window.canSeeAdminUpgradeControls=canSeeAdminUpgradeControls;
 function canSeeMakePicksUpgradeComparison(){
-  if(embeddedUfc328Preview)return false;
+  if(isUfc328PreviewMode())return false;
   var pool=currentPoolMeta||{};
   var raw=pool.planType||pool.plan||pool.tier||pool.pricingPlan||"";
   var plan=getPoolPlanType(pool);
@@ -24726,7 +24729,7 @@ const fights = [
   {id:"p2",sec:"prelim",w:"Heavyweight",bonus:true,f1:"Josh Hokit",r1:"9-0-0",c1:"us",o1:-110,f2:"Derrick Lewis",r2:"29-13-0",c2:"us",o2:-110}
 ];
 
-if(embeddedUfc328Preview){
+if(isUfc328PreviewMode()){
   fights.splice(0,fights.length,
     {id:"m1",sec:"main",w:"Middleweight Championship",title:true,bonus:true,f1:"Khamzat Chimaev",r1:"15-0",c1:"se",o1:-535,f2:"Sean Strickland",r2:"30-7",c2:"us",o2:400},
     {id:"m2",sec:"main",w:"Flyweight Championship",title:true,bonus:true,f1:"Joshua Van",r1:"16-2",c1:"us",o1:130,f2:"Tatsuro Taira",r2:"17-1",c2:"jp",o2:-155},
@@ -26326,8 +26329,8 @@ function pickedFighterName(e,f){return e&&e.picks&&e.picks[f.id]===2?f.f2:f.f1;}
 function fmt(o){return o>0?"+"+o:""+o;}
 function flagUrl(cc){return cc?"https://flagcdn.com/w320/"+cc+".png":"";}
 function flagStyle(cc){return cc?"--flag:url(\'"+flagUrl(cc)+"\')":"";}
-function isLocked(){return embeddedUfc328Preview || picksLocked || new Date()>=DEADLINE || !canActivePoolEventAcceptPicks(currentPoolMeta);}
-function canSeeAllPicks(){return embeddedUfc328Preview || isLocked()||picksVisible;}
+function isLocked(){return isUfc328PreviewMode() || picksLocked || new Date()>=DEADLINE || !canActivePoolEventAcceptPicks(currentPoolMeta);}
+function canSeeAllPicks(){return isUfc328PreviewMode() || isLocked()||picksVisible;}
 function publicLockNotice(){
   var msg=document.getElementById("submitMsg");
   if(msg) msg.textContent="🔒 Picks are locked. Only admin can manage results/entries now.";
@@ -26507,7 +26510,7 @@ function embeddedUfc328Entries(){
   return names.map(function(name,index){return embeddedUfc328Entry(name,index,banners[index%banners.length],index===0);}).sort(function(a,b){return calcScore(b)-calcScore(a)||(a.name||"").localeCompare(b.name||"");});
 }
 function applyEmbeddedUfc328PreviewData(){
-  if(!embeddedUfc328Preview&&!isEmbeddedUfc328PreviewRequest())return false;
+  if(!isUfc328PreviewMode())return false;
   currentPoolExists=true;
   currentPoolChecked=true;
   currentPoolMeta={poolId:currentPoolId,poolCode:"dante-casuals",poolName:"Dante and the Casuals",joinCode:"casuals328"};
@@ -26555,7 +26558,7 @@ function applyEmbeddedUfc328PreviewData(){
   return true;
 }
 function forceEmbeddedPreviewPicksTab(){
-  if(!embeddedUfc328Preview&&!isEmbeddedUfc328PreviewRequest())return;
+  if(!isUfc328PreviewMode())return;
   setLandingRouteActive(false);
   document.documentElement.classList.add("embedded-ufc328-preview-root");
   var shell=document.getElementById("setupHome");
@@ -26586,7 +26589,7 @@ function forceEmbeddedPreviewPicksTab(){
   }catch(e){}
 }
 function ensureEmbeddedUfc328MakePickState(){
-  if(!embeddedUfc328Preview||!myEntry)return;
+  if(!isUfc328PreviewMode()||!myEntry)return;
   var pr=getEntryProps(myEntry);
   Object.assign(picks,myEntry.picks||{});
   Object.assign(methods,myEntry.methods||{});
@@ -26606,7 +26609,7 @@ function ensureEmbeddedUfc328MakePickState(){
   });
 }
 document.addEventListener("click",function(e){
-  if(!embeddedUfc328Preview)return;
+  if(!isUfc328PreviewMode())return;
   var target=e.target&&e.target.closest&&e.target.closest("button,input,select,textarea");
   if(!target)return;
   if(document.body&&document.body.classList.contains("phone-design-preview")&&target.closest(".phone-fight-toggle,.phone-special-toggle"))return;
@@ -26618,7 +26621,7 @@ document.addEventListener("click",function(e){
   if(msg)msg.textContent="Preview mode is view-only. Join or create a pool to make changes.";
 },true);
 document.addEventListener("input",function(e){
-  if(!embeddedUfc328Preview)return;
+  if(!isUfc328PreviewMode())return;
   if(e.target&&e.target.closest&&e.target.closest("input,select,textarea")){
     e.preventDefault();
     e.target.blur();
@@ -26838,7 +26841,7 @@ function picksAreOfficiallySaved(){
   return !!myEntry;
 }
 function isFreedom250StraightCard(){
-  return !embeddedUfc328Preview;
+  return !isUfc328PreviewMode();
 }
 function pickSectionTitle(sec){
   if(sec==="lower")return "More Fights";
@@ -27175,7 +27178,7 @@ function updateProgress(){
 	  if(progressWrap)progressWrap.classList.toggle("complete",allOk);
 	  var progressTxt=document.getElementById("progressTxt");
 	  if(progressTxt){
-	    var previewProgress=!!(typeof embeddedUfc328Preview!=="undefined"&&embeddedUfc328Preview);
+	    var previewProgress=isUfc328PreviewMode();
 	    var progressParts=previewProgress?["Winners "+n+" of "+fightCount+" filled"]:["Winners "+n+" of "+fightCount];
 	    if(bonusFights.length)progressParts.push(previewProgress?"Methods "+methsDone+" of "+bonusFights.length+" filled":"Methods "+methsDone+" of "+bonusFights.length);
 	    if(timingFights.length)progressParts.push(previewProgress?"Round/timing "+timingsDone+" of "+timingFights.length+" filled":"Round/timing "+timingsDone+" of "+timingFights.length);
