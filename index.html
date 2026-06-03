@@ -33290,69 +33290,7 @@ if(!firebaseDisabled)getDoc(poolDoc("settings","lock")).then(function(snap){
 
 
 /* ===== Profile banners, admin randomizer, and UFC 329 next-event update ===== */
-const profileBanners=[
-  {key:"fl69",name:"Fight Locks 01",desc:"Official Fight Locks green banner",url:"public/profile-banners/fight-locks-banner-69.png"},
-  {key:"t204",name:"Fight Locks 02",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-04.png"},
-  {key:"t205",name:"Fight Locks 03",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-05.png"},
-  {key:"t206",name:"Fight Locks 04",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-06.png"},
-  {key:"t207",name:"Fight Locks 05",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-07.png"},
-  {key:"t208",name:"Fight Locks 06",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-08.png"},
-  {key:"t209",name:"Fight Locks 07",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-09.png"},
-  {key:"t210",name:"Fight Locks 08",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-10.png"},
-  {key:"t211",name:"Fight Locks 09",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-11.png"},
-  {key:"t212",name:"Fight Locks 10",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-12.png"},
-  {key:"t213",name:"Fight Locks 11",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-13.png"},
-  {key:"t216",name:"Fight Locks 12",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-16.png"},
-  {key:"t217",name:"Fight Locks 13",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-17.png"},
-  {key:"t218",name:"Fight Locks 14",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-18.png"},
-  {key:"t219",name:"Fight Locks 15",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-19.png"},
-  {key:"t220",name:"Fight Locks 16",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-20.png"},
-  {key:"t221",name:"Fight Locks 17",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-21.png"},
-  {key:"t222",name:"Fight Locks 18",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-22.png"},
-  {key:"t223",name:"Fight Locks 19",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-23.png"},
-  {key:"t224",name:"Fight Locks 20",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-24.png"},
-  {key:"t225",name:"Fight Locks 21",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-25.png"},
-  {key:"t226",name:"Fight Locks 22",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-26.png"},
-  {key:"t227",name:"Fight Locks 23",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-27.png"},
-  {key:"t228",name:"Fight Locks 24",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-28.png"},
-  {key:"t229",name:"Fight Locks 25",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-29.png"},
-  {key:"t230",name:"Fight Locks 26",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-30.png"},
-  {key:"t231",name:"Fight Locks 27",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-31.png"},
-  {key:"t232",name:"Fight Locks 28",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-32.png"},
-  {key:"t233",name:"Fight Locks 29",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-33.png"},
-  {key:"t234",name:"Fight Locks 30",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-34.png"},
-  {key:"t235",name:"Fight Locks 31",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-35.png"},
-  {key:"t237",name:"Fight Locks 32",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-37.png"},
-  {key:"t238",name:"Fight Locks 33",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-38.png"},
-  {key:"t239",name:"Fight Locks 34",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-39.png"},
-  {key:"t240",name:"Fight Locks 35",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-40.png"},
-  {key:"t241",name:"Fight Locks 36",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-41.png"},
-  {key:"t242",name:"Fight Locks 37",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-42.png"},
-  {key:"t243",name:"Fight Locks 38",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-43.png"},
-  {key:"t244",name:"Fight Locks 39",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-44.png"},
-  {key:"t245",name:"Fight Locks 40",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-45.png"},
-  {key:"t246",name:"Fight Locks 41",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-46.png"},
-  {key:"t247",name:"Fight Locks 42",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-47.png"},
-  {key:"t248",name:"Fight Locks 43",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-48.png"},
-  {key:"t249",name:"Fight Locks 44",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-49.png"},
-  {key:"t250",name:"Fight Locks 45",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-50.png"},
-  {key:"t251",name:"Fight Locks 46",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-51.png"},
-  {key:"t252",name:"Fight Locks 47",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-52.png"},
-  {key:"t253",name:"Fight Locks 48",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-53.png"},
-  {key:"t254",name:"Fight Locks 49",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-54.png"},
-  {key:"t255",name:"Fight Locks 50",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-55.png"},
-  {key:"t256",name:"Fight Locks 51",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-56.png"},
-  {key:"t257",name:"Fight Locks 52",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-57.png"},
-  {key:"t258",name:"Fight Locks 53",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-58.png"},
-  {key:"t259",name:"Fight Locks 54",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-59.png"},
-  {key:"t260",name:"Fight Locks 55",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-60.png"},
-  {key:"t261",name:"Fight Locks 56",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-61.png"},
-  {key:"t262",name:"Fight Locks 57",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-62.png"},
-  {key:"t263",name:"Fight Locks 58",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-63.png"},
-  {key:"t264",name:"Fight Locks 59",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-64.png"},
-  {key:"t265",name:"Fight Locks 60",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-65.png"},
-  {key:"t266",name:"Fight Locks 61",desc:"Official Fight Locks banner take 2",url:"public/profile-banners/fight-locks-banner-t2-66.png"}
-];
+const profileBanners=[];
 function safeHtml(v){return String(v||"").replace(/[&<>'"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c];});}
 window.safeHtml=safeHtml;
 var danteCreatorBanner={key:"danteCreator",url:"public/dante-creator-banner.png",name:"Dante creator banner",desc:"Private creator banner"};
@@ -33503,7 +33441,9 @@ function withLinkedInDemoEntries(entries){
 function leaderboardBannerUrl(key){var b=bannerByKey(key);return b&&b.url?b.url.replace("public/profile-banners/fight-locks-banner-","public/profile-banners-leaderboard/leaderboard-banner-"):"";}
 function renderProfileBannerCard(){
   if(!myEntry)return "";
+  if(!profileBanners.length&&!isDanteCreatorAccount())return "";
   if(!currentPoolFeatureEnabled("allowEditableBanners")){
+    if(!profileBanners.length)return "";
     var lockedChoices=profileBanners.slice(0,18).map(function(x){
       return '<button type="button" class="profile-banner-choice banner-swatch locked-banner-choice plan-locked-control" style="--profile-banner-image:url('+safeHtml(x.url)+')" data-banner-key="'+safeHtml(x.key)+'" aria-disabled="true" title="'+customBannerLockedMessage()+'" onclick="showLockedBannerMessage(event);return false">'+
         '<img class="profile-banner-choice-img" src="'+safeHtml(x.url)+'" alt="Locked premium banner preview">'+
@@ -33524,6 +33464,7 @@ function refreshProfileBannerPickerUI(key){
   var select=document.getElementById("profileBannerSelect");
   if(select)select.value=key;
   var preview=document.getElementById("profileBannerPreview");
+  if(!b)return;
   if(preview){
     preview.className="profile-banner-preview "+bannerClass(key);
     preview.style.setProperty("--profile-banner-image","url("+b.url+")");

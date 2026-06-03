@@ -1,0 +1,13 @@
+dist/
+.DS_Store
+*.zip
+Fight-Locks-current-safe/
+Picks-Pool-current/
+Picks-Pool-latest-for-chatgpt-review/
+fight-locks-netlify-deploy/
+netlify-deploy-fight-locks/
+index-backup-before-cleanup.html
+index-latest-for-chatgpt-review.html
+chat-metal-options.html
+mockups/
+tools/
