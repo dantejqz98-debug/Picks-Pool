@@ -362,12 +362,14 @@
     }
     var el = global.document.getElementById("lbList");
     if (!el) return;
-    if (!entries().length) {
+    var currentEntries = entries();
+    if (!currentEntries.length) {
       el.innerHTML = '<div class="empty">No entries yet — be the first!</div>';
       afterRenderLeaderboard();
       return;
     }
-    var scored = entries().map(function (e) { return { e: e, sc: scoreEntry(e) }; }).sort(function (a, b) { return b.sc - a.sc; });
+    global.__lastKnownAllPicksEntries = currentEntries.slice();
+    var scored = currentEntries.map(function (e) { return { e: e, sc: scoreEntry(e) }; }).sort(function (a, b) { return b.sc - a.sc; });
     var championRow = clearLeaderboardChampion(scored);
     var championId = championRow ? entryIdentity(championRow.e) : "";
     var lastScore = null;
@@ -389,6 +391,16 @@
       return '<div class="lb-entry' + (isLeader ? " leader" : "") + '">' + leaderMain + "</div>";
     }).join("");
     afterRenderLeaderboard();
+    if (currentEntries.length && typeof global.renderAllPicks === "function" && !global.__allPicksRefreshFromLeaderboardQueued) {
+      var allPicksEl = global.document && global.document.getElementById("allPicksContent");
+      if (allPicksEl && !allPicksEl.querySelector(".ap-block")) {
+        global.__allPicksRefreshFromLeaderboardQueued = true;
+        global.setTimeout(function () {
+          global.__allPicksRefreshFromLeaderboardQueued = false;
+          try { global.renderAllPicks(); } catch (e) {}
+        }, 0);
+      }
+    }
   }
 
   global.renderLeaderboard = renderLeaderboard;
