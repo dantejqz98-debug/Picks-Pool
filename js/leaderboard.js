@@ -327,7 +327,7 @@
       });
     }
     if (actual && rowEls.length && !list.querySelector(".fastest-final-note")) {
-      list.insertAdjacentHTML("afterbegin", '<div class="fastest-final-note">Actual Fastest Finish: ' + esc(String(actual.round).toUpperCase() + " at " + actual.mark + " mark") + "</div>");
+      list.insertAdjacentHTML("afterbegin", '<div class="fastest-final-note">Actual Fastest Finish: ' + esc(String(actual.round).toUpperCase() + " at " + actual.mark) + "</div>");
     }
   }
 

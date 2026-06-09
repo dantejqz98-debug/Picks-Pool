@@ -55,7 +55,27 @@
   function getEventById(eventId) {
     var events = safeEvents();
     var id = String(eventId || getActiveEventId()).trim() || DEFAULT_EVENT_ID;
-    return events[id] || events[DEFAULT_EVENT_ID] || defaultEvent();
+    return normalizeFreedom250Event(events[id] || events[DEFAULT_EVENT_ID] || defaultEvent());
+  }
+
+  function isFreedom250Event(event) {
+    event = event || {};
+    var id = String(event.eventId || event.poolEventId || "").toLowerCase();
+    var name = String(event.eventName || event.eventLabel || event.currentEvent || "").toLowerCase();
+    return id === DEFAULT_EVENT_ID || id.indexOf("freedom-250") > -1 || name.indexOf("freedom 250") > -1;
+  }
+
+  function normalizeFreedom250Event(event) {
+    if (!isFreedom250Event(event)) return event || {};
+    return Object.assign({}, event || {}, {
+      eventDate: event.eventDate || "Jun 14",
+      eventTime: "7:00 PM",
+      eventTimeZone: "CDT",
+      picksLockAt: "",
+      lockAt: "",
+      startDateTime: "",
+      sourceDateTime: ""
+    });
   }
 
   function getCurrentPoolEvent(pool) {
@@ -96,11 +116,11 @@
     var poolEvents = pool.poolEvents || {};
     var poolEvent = poolEvents[activePoolEventId] || poolEvents[pool.eventId] || null;
     var base = getEventById((poolEvent && poolEvent.eventId) || pool.eventId || activePoolEventId);
-    return Object.assign({}, base, poolEvent || {}, {
+    return normalizeFreedom250Event(Object.assign({}, base, poolEvent || {}, {
       poolEventId: (poolEvent && poolEvent.poolEventId) || activePoolEventId,
       eventId: (poolEvent && poolEvent.eventId) || base.eventId || DEFAULT_EVENT_ID,
       poolEventStatus: normalizeEventStatus((poolEvent && poolEvent.poolEventStatus) || pool.poolEventStatus || base.eventStatus)
-    });
+    }));
   }
 
   function getPoolEventHistory(pool) {
@@ -148,6 +168,7 @@
   global.eventStatusDisplay = eventStatusDisplay;
   global.getEventStatus = getEventStatus;
   global.getEventById = getEventById;
+  global.normalizeFreedom250Event = normalizeFreedom250Event;
   global.getCurrentPoolEvent = getCurrentPoolEvent;
   global.getCurrentEventFights = getCurrentEventFights;
   global.isEventVisibleToUsers = isEventVisibleToUsers;
