@@ -17357,6 +17357,27 @@ body.landing-route-active:not(.app-profile-locked):not(.god-mode) #view-profile.
   text-transform:uppercase!important;
   letter-spacing:.035em!important;
 }
+.landing-community-hint{
+  display:none;
+  margin:8px auto 0;
+  max-width:420px;
+  padding:9px 11px;
+  border:1px solid rgba(246,212,107,.30);
+  border-radius:10px;
+  background:rgba(0,0,0,.38);
+  color:#f6d46b;
+  -webkit-text-fill-color:#f6d46b;
+  font-size:12px;
+  line-height:1.35;
+  font-weight:900;
+  text-align:center;
+}
+.landing-community-hint.show{display:block}
+.landing-community-hint.bad{
+  border-color:rgba(255,118,118,.35);
+  color:#ffd7d7;
+  -webkit-text-fill-color:#ffd7d7;
+}
 .preview-experience-action{display:flex!important;justify-content:center!important;margin:4px auto 20px!important;width:100%!important}
 .preview-experience-action button,
 .preview-experience-action a{

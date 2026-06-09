@@ -3958,16 +3958,23 @@ function prefillCommunityPoolJoin(){
   }
   if(typeof setSetupMessage==="function")setSetupMessage(currentUser?"Freedom 250 pool is ready. Tap Join Freedom 250 Pool to enter.":"Freedom 250 pool is ready. Sign in or create your account, then tap Join Freedom 250 Pool.");
 }
+function setCommunityPoolJoinHint(message,bad){
+  var hint=document.getElementById("communityPoolJoinHint");
+  if(!hint)return;
+  hint.textContent=message||"";
+  hint.classList.toggle("bad",!!bad);
+  hint.classList.toggle("show",!!message);
+}
 window.joinCommunityPool=async function(){
-  var communityPoolId=await resolveFreedom250CommunityPoolId();
-  var activePool=String(currentPoolId||"").trim().toLowerCase();
-  if(activePool!==communityPoolId){
-    window.location.href="index.html?pool="+encodeURIComponent(communityPoolId)+"&new=1&community=1&cb=community-pool#join-pool";
-    return;
-  }
   if(typeof setLandingPublicSection==="function")setLandingPublicSection("home");
-  if(typeof showLandingOnboarding==="function")showLandingOnboarding("join");
-  setTimeout(prefillCommunityPoolJoin,0);
+  if(typeof showLandingOnboarding==="function")showLandingOnboarding("join",{preserveHash:false,scroll:false});
+  prefillCommunityPoolJoin();
+  var signedIn=!!(currentUser&&((currentMember&&((currentMember.name||currentMember.username||currentMember.fullName)||(currentMember.email)))||currentUser.email));
+  var message=signedIn?"Freedom 250 is ready. Tap Join Freedom 250 Pool to request access with this account.":"Create an account or sign in first. We filled in the Freedom 250 pool code and passcode for you.";
+  setCommunityPoolJoinHint(message,!signedIn);
+  if(typeof setSetupMessage==="function")setSetupMessage(message,!signedIn);
+  var target=document.querySelector(".fight-landing > .setup-body")||document.getElementById("createAccountMode")||document.getElementById("setupPathPanel");
+  if(target&&target.scrollIntoView)target.scrollIntoView({behavior:"smooth",block:"start"});
 };
 function shouldActivateCommunityJoin(){
   try{

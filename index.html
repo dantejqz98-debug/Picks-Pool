@@ -169,7 +169,7 @@ try{
     try{sessionStorage.setItem("fightLocksMobilePoolNavCollapsed",collapsed?"1":"0");}catch(e){}
     window.syncMobilePoolNavToggle();
   };
-  window.goToMyPoolsAfterConfirm=window.goToMyPoolsAfterConfirm||function(e){
+	  window.goToMyPoolsAfterConfirm=window.goToMyPoolsAfterConfirm||function(e){
     if(e&&e.preventDefault)e.preventDefault();
     if(e&&e.stopPropagation)e.stopPropagation();
     var modal=document.getElementById("poolNavConfirmModal");
@@ -201,9 +201,49 @@ try{
       modal.setAttribute("aria-hidden","true");
       modal.style.display="none";
     }
-    return false;
-  };
-  window.showMyPoolsNavConfirm=window.showMyPoolsNavConfirm||function(){
+	    return false;
+	  };
+	  window.joinCommunityPool=window.joinCommunityPool||function(){
+	    var message="Create an account or sign in first. We filled in the Freedom 250 pool code and passcode for you.";
+	    if(document.body){
+	      document.body.classList.add("app-profile-locked","landing-route-active");
+	      document.body.classList.remove("pool-experience-active","pool-route-boot","local-device-pool-route-boot");
+	    }
+	    var setup=document.getElementById("setupHome");
+	    if(setup){
+	      setup.hidden=false;
+	      setup.classList.remove("my-pools-active");
+	    }
+	    var home=document.getElementById("landingHomeContent");
+	    if(home)home.hidden=false;
+	    var publicSection=document.getElementById("landingPublicSection");
+	    if(publicSection)publicSection.hidden=true;
+	    var createMode=document.getElementById("createAccountMode");
+	    if(createMode)createMode.hidden=false;
+	    var pathPanel=document.getElementById("setupPathPanel");
+	    if(pathPanel)pathPanel.hidden=false;
+	    var signin=document.getElementById("signInMode");
+	    if(signin)signin.hidden=true;
+	    var poolName=document.getElementById("setupJoinPoolCode");
+	    var pass=document.getElementById("setupJoinPoolPasscode");
+	    if(poolName)poolName.value="freedom250-community-pool-pae2gg";
+	    if(pass)pass.value="Freedom250";
+	    var hint=document.getElementById("communityPoolJoinHint");
+	    if(hint){
+	      hint.textContent=message;
+	      hint.classList.add("show","bad");
+	    }
+	    var msg=document.getElementById("setupMessage");
+	    if(msg){
+	      msg.textContent=message;
+	      msg.classList.add("show","bad");
+	    }
+	    try{history.replaceState(null,"",window.location.pathname+window.location.search+"#join-pool");}catch(e){}
+	    var target=document.querySelector(".fight-landing > .setup-body")||createMode||pathPanel;
+	    if(target&&target.scrollIntoView)target.scrollIntoView({behavior:"smooth",block:"start"});
+	    return false;
+	  };
+	  window.showMyPoolsNavConfirm=window.showMyPoolsNavConfirm||function(){
     var modal=document.getElementById("poolNavConfirmModal");
     if(!modal){
       modal=document.createElement("div");
@@ -275,7 +315,7 @@ try{
   })();
 })();
 </script>
-<link rel="stylesheet" href="css/app.css?v=split-20260609al">
+<link rel="stylesheet" href="css/app.css?v=split-20260609an">
 
 </head>
 <body class="app-profile-locked">
@@ -616,6 +656,7 @@ try{
       <div class="landing-community-actions">
         <button class="landing-community-primary" id="communityPoolJoinBtn" type="button" onclick="joinCommunityPool()">Join Free Community Pool</button>
         <small>The pool name code and password will be filled in for you.</small>
+        <div class="landing-community-hint" id="communityPoolJoinHint" aria-live="polite"></div>
       </div>
     </section>
 
@@ -2171,12 +2212,12 @@ try{
   </div>
 </div>
 
-<script src="js/permissions.js?v=split-20260609al"></script>
-<script src="js/events.js?v=split-20260609al"></script>
-<script src="js/picksData.js?v=split-20260609al"></script>
-<script src="js/leaderboard.js?v=split-20260609al"></script>
-<script type="module" src="js/app-main.js?v=split-20260609al"></script>
-<script src="js/app-polish.js?v=split-20260609al"></script>
+<script src="js/permissions.js?v=split-20260609an"></script>
+<script src="js/events.js?v=split-20260609an"></script>
+<script src="js/picksData.js?v=split-20260609an"></script>
+<script src="js/leaderboard.js?v=split-20260609an"></script>
+<script type="module" src="js/app-main.js?v=split-20260609an"></script>
+<script src="js/app-polish.js?v=split-20260609an"></script>
 
 
 
