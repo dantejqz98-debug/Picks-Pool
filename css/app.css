@@ -9739,22 +9739,8 @@ html:has(body.embedded-readonly-preview){
   box-shadow:0 0 0 3px rgba(179,31,36,.40),0 20px 36px rgba(0,0,0,.42),0 0 36px rgba(179,31,36,.30),inset 0 1px 0 rgba(255,255,255,.16);
 }
 .setup-body.onboarding-start .landing-pool-type-card.selected:after{
-  content:"Selected";
-  position:absolute;
-  top:10px;
-  right:10px;
-  z-index:2;
-  border:1px solid rgba(255,255,255,.28);
-  border-radius:999px;
-  padding:5px 8px 4px;
-  background:linear-gradient(180deg,rgba(179,31,36,.98),rgba(95,20,24,.98));
-  color:#fff;
-  font-size:10px;
-  line-height:1;
-  font-weight:950;
-  letter-spacing:.07em;
-  text-transform:uppercase;
-  box-shadow:0 8px 16px rgba(0,0,0,.28);
+  content:none!important;
+  display:none!important;
 }
 .setup-body.onboarding-start .landing-pool-type-top{
   display:grid;
@@ -13776,12 +13762,8 @@ html:has(body.embedded-readonly-preview){
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 16px rgba(0,0,0,.20)!important;
   }
   .setup-body.onboarding-start .landing-pool-type-card.selected:after{
-    content:"Selected"!important;
-    top:auto!important;
-    right:10px!important;
-    bottom:10px!important;
-    padding:4px 7px!important;
-    font-size:8px!important;
+    content:none!important;
+    display:none!important;
   }
   .setup-body.onboarding-start .landing-pool-type-top{
     display:grid!important;
