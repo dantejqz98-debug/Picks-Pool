@@ -4809,7 +4809,13 @@ body.god-mode .god-mode-view{
 .profile-action-group.danger button{border-color:rgba(252,129,129,.45);background:rgba(127,29,29,.24);color:#fecaca}
 .profile-action-group button.confirming{border-color:rgba(246,212,107,.62);background:linear-gradient(180deg,rgba(246,212,107,.26),rgba(116,66,16,.32));color:#fff7d6}
 @media(max-width:640px){.profile-action-group{grid-template-columns:1fr}.profile-action-group button{width:100%}}
-.app-profile-locked .tabs,.app-profile-locked .view,.app-profile-locked .pool-shell,.app-profile-locked #memberGate{display:none!important}
+.app-profile-locked .tabs,
+.app-profile-locked .belt-tabs,
+.app-profile-locked .mobile-pool-nav-current,
+.app-profile-locked .mobile-pool-nav-toggle,
+.app-profile-locked .view,
+.app-profile-locked .pool-shell,
+.app-profile-locked #memberGate{display:none!important}
 body.auth-boot-pending.app-profile-locked .setup-home,
 body.auth-boot-pending.landing-route-active .setup-home{
   display:none!important;
