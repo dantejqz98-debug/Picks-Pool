@@ -2728,6 +2728,12 @@ window.toggleMobilePoolNav=function(force){
 };
 function restoreMobilePoolNavState(){
   if(!document.body)return;
+  if(document.body.classList.contains("landing-route-active")){
+    document.body.classList.remove("mobile-pool-nav-collapsed");
+    try{sessionStorage.removeItem("fightLocksMobilePoolNavCollapsed");}catch(e){}
+    syncMobilePoolNavToggle();
+    return;
+  }
   try{
     if(new URLSearchParams(location.search).get("deviceFrame")==="1"){
       document.body.classList.add("mobile-pool-nav-collapsed");
@@ -20634,6 +20640,7 @@ window.refreshFightResultsForViews=async function(){
 })();
 /* Mobile visitors should see the phone version inside the public picks preview. */
 (function(){
+  return;
   try{if(new URLSearchParams(location.search).get("deviceFrame")==="1")return;}catch(e){}
   if(!window.matchMedia||!window.matchMedia("(max-width: 760px)").matches)return;
   var frame=document.querySelector(".fight-landing .real-pool-preview-frame");

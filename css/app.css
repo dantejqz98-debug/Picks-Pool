@@ -18951,3 +18951,29 @@ html.embedded-phone-design-preview body.embedded-readonly-preview.phone-design-p
   top:auto!important;
   transform:none!important;
 }
+
+/* Public launch pages should never show the pool preview iframe or pool tab menu. */
+body.landing-route-active #preview-experience,
+body.landing-route-active #setupPreview,
+body.landing-route-active .landing-preview-copy-wrap,
+body.landing-route-active .setup-preview{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+body.landing-route-active .belt-tabs,
+body.landing-route-active .mobile-pool-nav-current,
+body.landing-route-active .mobile-pool-nav-toggle{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+}

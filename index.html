@@ -275,7 +275,7 @@ try{
   })();
 })();
 </script>
-<link rel="stylesheet" href="css/app.css?v=split-20260609aj">
+<link rel="stylesheet" href="css/app.css?v=split-20260609al">
 
 </head>
 <body class="app-profile-locked">
@@ -591,7 +591,6 @@ try{
         <p class="landing-hero-support">Create or join fight pools with friends, lock in picks across the card, and watch the leaderboard move from early prelims to the main event.</p>
         <div class="preview-actions landing-cta">
           <button class="preview-primary" type="button" onclick="scrollToAccountStart()">Start a Pool</button>
-          <button type="button" onclick="openPreviewExperienceDirect()">Preview the Experience</button>
         </div>
       </div>
       <div class="setup-path" id="setupInvitePath">
@@ -638,192 +637,6 @@ try{
         <div><strong>Own the Pool</strong><span>Climb past your friends on the leaderboard, take the top spot, and let the standings speak for themselves.</span></div>
       </div>
     </section>
-
-    <div class="landing-preview-copy-wrap" id="preview-experience">
-      <div class="preview-head preview-banner-head">
-        <div class="landing-preview-intro" aria-hidden="true">
-          <div class="intro-kicker">Before You Create An Account</div>
-          <div class="intro-title">Preview The Picks Experience</div>
-          <div class="intro-copy">Click through the preview to see the full finalized card experience with friends. Create an account or sign in to join a pool or create your own.</div>
-        </div>
-      </div>
-      <div class="preview-experience-action"><a href="#preview-experience">Preview the Experience <span>→</span></a></div>
-    </div>
-
-    <div class="setup-preview" id="setupPreview">
-      <div class="preview-grid preview-real landing-preview-grid">
-        <div class="preview-card preview-real-picks landing-preview-card real-pool-frame-card preview-frame-ready">
-          <div class="preview-load-bar">
-            <button class="preview-load-button" type="button" onclick="loadPreviewExperience(this)">Load Preview</button>
-          </div>
-          <iframe
-            class="real-pool-preview-frame"
-            title="Interactive Fight Locks pool preview"
-            data-src="/index.html?pool=dante-casuals&host=Dante&previewCard=ufc328&embeddedPreview=1&v=time-bright-20260609ak#picks"
-            scrolling="yes"
-            loading="lazy"></iframe>
-          <div class="real-pool-scroll-capture" aria-hidden="true"></div>
-        </div>
-      </div>
-    </div>
-    <script>
-    window.previewExperienceUrl=function(){
-      try{
-        var current=new URL(location.href);
-        var frame=document.querySelector(".real-pool-preview-frame");
-        var url=new URL((frame&&frame.getAttribute("data-src"))||"/index.html",location.href);
-        url.searchParams.set("pool",url.searchParams.get("pool")||"dante-casuals");
-        url.searchParams.set("host",url.searchParams.get("host")||"Dante");
-        url.searchParams.set("previewCard","ufc328");
-        url.searchParams.set("embeddedPreview","1");
-        url.searchParams.set("phoneDesignPreview","1");
-        url.searchParams.set("v",current.searchParams.get("v")||"time-bright-20260609ak");
-        url.hash="#picks";
-        return url.pathname+url.search+url.hash;
-      }catch(e){
-        return "/index.html?pool=dante-casuals&host=Dante&previewCard=ufc328&embeddedPreview=1&phoneDesignPreview=1&v=time-bright-20260609ak#picks";
-      }
-    };
-    window.openPreviewExperienceDirect=function(event){
-      if(event&&event.preventDefault)event.preventDefault();
-      if(event&&event.stopPropagation)event.stopPropagation();
-      var preview=document.getElementById("setupPreview");
-      var card=document.querySelector(".real-pool-frame-card");
-      var button=document.querySelector(".preview-load-button");
-      var frame=document.querySelector(".real-pool-preview-frame");
-      if(preview){
-        preview.hidden=false;
-        preview.style.display="";
-        preview.style.visibility="";
-        preview.style.opacity="";
-      }
-      if(card){
-        card.style.display="";
-        card.style.visibility="";
-        card.style.opacity="";
-      }
-      if(button&&typeof window.loadPreviewExperience==="function")window.loadPreviewExperience(button);
-      else if(frame&&!frame.getAttribute("src")){
-        var src=frame.getAttribute("data-src")||window.previewExperienceUrl();
-        frame.setAttribute("src",src);
-      }
-      if(preview&&preview.scrollIntoView)preview.scrollIntoView({behavior:"smooth",block:"start"});
-      return false;
-    };
-	    window.loadPreviewExperience=function(button){
-	      var card=button&&button.closest?button.closest(".real-pool-frame-card"):document.querySelector(".real-pool-frame-card");
-	      var frame=card?card.querySelector(".real-pool-preview-frame"):null;
-	      if(!frame)return;
-      var src=frame.getAttribute("data-src")||"";
-      var phonePreviewShell=false;
-      try{
-        var current=new URL(window.location.href);
-        var url=new URL(src||"/index.html",window.location.href);
-        var isUfcPreview=url.searchParams.get("previewCard")==="ufc328";
-        if(isUfcPreview){
-          url.searchParams.set("pool",url.searchParams.get("pool")||"dante-casuals");
-          url.searchParams.set("host",url.searchParams.get("host")||"Dante");
-          url.searchParams.set("embeddedPreview","1");
-          url.searchParams.delete("localHostedPreview");
-          phonePreviewShell=current.searchParams.get("deviceFrame")==="1"||(window.matchMedia&&window.matchMedia("(max-width: 760px)").matches);
-          if(phonePreviewShell)url.searchParams.set("phoneDesignPreview","1");
-        }else{
-          var pool=current.searchParams.get("pool")||url.searchParams.get("pool")||"freedom250-community-pool-pae2gg";
-          url.searchParams.set("pool",pool);
-          url.searchParams.set("host",current.searchParams.get("host")||url.searchParams.get("host")||"Freedom250");
-          url.searchParams.set("embeddedPreview","1");
-          url.searchParams.set("localHostedPreview","1");
-          url.searchParams.delete("previewCard");
-          url.searchParams.delete("phoneDesignPreview");
-        }
-        url.searchParams.set("v",current.searchParams.get("v")||"time-bright-20260609ak");
-        url.hash="#picks";
-        src=url.pathname+url.search+url.hash;
-        frame.setAttribute("data-src",src);
-      }catch(e){}
-      if(!src)return;
-      if(card){
-        card.classList.add("preview-frame-loading");
-        card.classList.remove("preview-frame-ready");
-      }
-      if(button){
-        button.disabled=true;
-        button.textContent="Loading Preview...";
-      }
-      function finish(){
-        if(card){
-          card.classList.add("preview-frame-ready");
-          card.classList.remove("preview-frame-loading");
-        }
-        var bar=button&&button.closest?button.closest(".preview-load-bar"):null;
-        if(bar)bar.remove();
-        else if(button)button.remove();
-      }
-      frame.addEventListener("load",finish,{once:true});
-      if(phonePreviewShell)frame.setAttribute("loading","eager");
-      if(!frame.getAttribute("src"))frame.setAttribute("src",src);
-      else finish();
-      setTimeout(finish,phonePreviewShell?1200:3600);
-    };
-    window.autoLoadPhonePreviewExperience=function(){
-      try{
-        var params=new URLSearchParams(location.search);
-        if(params.get("deviceFrame")==="1")return;
-        var phoneShell=params.get("deviceFrame")==="1"||(window.matchMedia&&window.matchMedia("(max-width: 760px)").matches);
-        if(!phoneShell)return;
-        var button=document.querySelector(".preview-load-button");
-        var frame=document.querySelector(".real-pool-preview-frame");
-        if(!button||!frame||frame.getAttribute("src"))return;
-        window.loadPreviewExperience(button);
-        setTimeout(function(){
-          try{
-            if(frame.getAttribute("src")){
-              var bar=document.querySelector(".preview-load-bar");
-              if(bar)bar.remove();
-              var card=frame.closest(".real-pool-frame-card");
-              if(card){
-                card.classList.add("preview-frame-ready");
-                card.classList.remove("preview-frame-loading");
-              }
-            }
-          }catch(e){}
-        },900);
-      }catch(e){}
-    };
-    (function(){
-	      function routePhonePreviewAction(){
-	        var phoneShell=false;
-	        try{
-	          var params=new URLSearchParams(location.search);
-	          if(params.get("deviceFrame")==="1")return;
-	          phoneShell=params.get("deviceFrame")==="1"||(window.matchMedia&&window.matchMedia("(max-width: 760px)").matches);
-	        }catch(e){}
-        if(!phoneShell)return;
-        var action=document.querySelector(".preview-experience-action a");
-        var heroAction=document.querySelector(".preview-actions.landing-cta button:not(.preview-primary)");
-        var frame=document.querySelector(".real-pool-preview-frame");
-        try{
-	          if(action){
-	            action.href="#setupPreview";
-	            action.onclick=function(event){return window.openPreviewExperienceDirect(event);};
-	          }
-          if(heroAction){
-            heroAction.textContent="Preview the Picks Experience";
-            heroAction.onclick=function(){window.openPreviewExperienceDirect();};
-          }
-        }catch(e){}
-      }
-      function initPhonePreviewAction(){
-        routePhonePreviewAction();
-        window.autoLoadPhonePreviewExperience();
-      }
-      if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initPhonePreviewAction);
-      else initPhonePreviewAction();
-      setTimeout(window.autoLoadPhonePreviewExperience,350);
-      setTimeout(window.autoLoadPhonePreviewExperience,1200);
-    })();
-    </script>
-
     </div>
     <section class="landing-public-section" id="landingPublicSection" hidden>
       <div class="landing-how-it-works" id="landingHowItWorksContent">
@@ -2358,12 +2171,12 @@ try{
   </div>
 </div>
 
-<script src="js/permissions.js?v=split-20260609aj"></script>
-<script src="js/events.js?v=split-20260609aj"></script>
-<script src="js/picksData.js?v=split-20260609aj"></script>
-<script src="js/leaderboard.js?v=split-20260609aj"></script>
-<script type="module" src="js/app-main.js?v=split-20260609aj"></script>
-<script src="js/app-polish.js?v=split-20260609aj"></script>
+<script src="js/permissions.js?v=split-20260609al"></script>
+<script src="js/events.js?v=split-20260609al"></script>
+<script src="js/picksData.js?v=split-20260609al"></script>
+<script src="js/leaderboard.js?v=split-20260609al"></script>
+<script type="module" src="js/app-main.js?v=split-20260609al"></script>
+<script src="js/app-polish.js?v=split-20260609al"></script>
 
 
 
