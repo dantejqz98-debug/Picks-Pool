@@ -10,12 +10,13 @@ try{
   var fightLocksBootParams=new URLSearchParams(window.location.search);
   var fightLocksBootHash=String(window.location.hash||"").replace(/^#/,"").toLowerCase();
   window.__fightLocksInitialDevicePreviewHash=fightLocksBootHash;
-  var fightLocksBootPoolTabs={picks:1,leaderboard:1,mine:1,allpicks:1,stats:1,scoring:1,nextevent:1,chat:1,pool:1,admin:1,profile:1,"invite-friends":1,"my-picks":1,"all-picks":1,account:1,"upcoming-events":1,"live-chat":1};
-  var fightLocksBootPublicRoutes={home:1,"how-it-works":1,features:1,pricing:1,faq:1,"join-pool":1,"start-pool":1,login:1,"my-pools":1};
-  if(fightLocksBootParams.get("deviceFrame")==="1"){
-    document.documentElement.classList.add("local-device-frame");
-    if(fightLocksBootPoolTabs[fightLocksBootHash])document.documentElement.classList.add("local-device-pool-frame");
-  }
+	  var fightLocksBootPoolTabs={picks:1,leaderboard:1,mine:1,allpicks:1,stats:1,scoring:1,nextevent:1,chat:1,pool:1,admin:1,profile:1,"invite-friends":1,"my-picks":1,"all-picks":1,account:1,"upcoming-events":1,"live-chat":1};
+	  var fightLocksBootPublicRoutes={home:1,"how-it-works":1,features:1,pricing:1,faq:1,"join-pool":1,"start-pool":1,login:1,"my-pools":1};
+	  if(fightLocksBootParams.get("deviceFrame")==="1"){
+	    document.documentElement.classList.add("local-device-frame");
+	    if(/^iphone/.test(String(fightLocksBootParams.get("deviceFrameType")||"")))document.documentElement.classList.add("local-device-phone-frame");
+	    if(fightLocksBootPoolTabs[fightLocksBootHash])document.documentElement.classList.add("local-device-pool-frame");
+	  }
   if(fightLocksBootParams.get("deviceFrame")==="1"&&(!fightLocksBootHash||fightLocksBootPublicRoutes[fightLocksBootHash])){
     document.documentElement.classList.add("local-device-home-frame");
   }
@@ -315,7 +316,7 @@ try{
   })();
 })();
 </script>
-<link rel="stylesheet" href="css/app.css?v=split-20260609an">
+<link rel="stylesheet" href="css/app.css?v=split-20260609ao">
 
 </head>
 <body class="app-profile-locked">
@@ -2212,12 +2213,12 @@ try{
   </div>
 </div>
 
-<script src="js/permissions.js?v=split-20260609an"></script>
-<script src="js/events.js?v=split-20260609an"></script>
-<script src="js/picksData.js?v=split-20260609an"></script>
-<script src="js/leaderboard.js?v=split-20260609an"></script>
-<script type="module" src="js/app-main.js?v=split-20260609an"></script>
-<script src="js/app-polish.js?v=split-20260609an"></script>
+<script src="js/permissions.js?v=split-20260609ao"></script>
+<script src="js/events.js?v=split-20260609ao"></script>
+<script src="js/picksData.js?v=split-20260609ao"></script>
+<script src="js/leaderboard.js?v=split-20260609ao"></script>
+<script type="module" src="js/app-main.js?v=split-20260609ao"></script>
+<script src="js/app-polish.js?v=split-20260609ao"></script>
 
 
 

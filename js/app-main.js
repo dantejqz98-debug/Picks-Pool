@@ -20376,7 +20376,7 @@ window.refreshFightResultsForViews=async function(){
   bar.setAttribute("aria-label","Device preview switcher");
   var stage=document.createElement("div");
   stage.className="device-preview-stage";
-		  function previewFrameSrc(){
+		  function previewFrameSrc(chosenDevice){
 		    var url=new URL(location.href);
 		    var hash=String(url.hash||"").replace(/^#/,"").toLowerCase();
 		    var poolTabs={picks:1,leaderboard:1,mine:1,allpicks:1,stats:1,scoring:1,nextevent:1,chat:1,pool:1,admin:1,profile:1,"invite-friends":1,"my-picks":1,"all-picks":1,account:1,"upcoming-events":1,"live-chat":1};
@@ -20385,6 +20385,7 @@ window.refreshFightResultsForViews=async function(){
 		    if(url.searchParams.get("devicePreview")&&url.searchParams.get("pool")&&requestedHash&&requestedHash!=="home"&&(!hash||hash==="home"))hash=requestedHash;
 		    url.searchParams.delete("devicePreview");
 		    url.searchParams.set("deviceFrame","1");
+		    if(chosenDevice&&chosenDevice.id)url.searchParams.set("deviceFrameType",chosenDevice.id);
 		    if(!hash||publicRoutes[hash]){
 	      ["pool","community","new","host"].forEach(function(key){url.searchParams.delete(key);});
 		      url.searchParams.set("deviceHome","1");
@@ -20584,7 +20585,7 @@ window.refreshFightResultsForViews=async function(){
     }
     shell.className="device-preview-frame-shell "+(chosen.id==="ipad"?"ipad":"phone");
 	    frame.title="Fight Locks "+chosen.label+" preview";
-	    var src=previewFrameSrc();
+		    var src=previewFrameSrc(chosen);
 	    if(frame.getAttribute("src")!==src)frame.setAttribute("src",src);
 	    installDeviceFrameScrollBridge(shell,frame);
 	  }

@@ -18640,13 +18640,13 @@ body.embedded-readonly-preview #view-picks #submitBtn.btn-primary.updated:not(:d
   -webkit-text-fill-color:#fff!important;
   text-shadow:0 2px 8px rgba(0,0,0,.86)!important;
 }
-html.local-device-frame body:not(.embedded-readonly-preview) .belt-tabs{
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .belt-tabs{
   min-height:72px!important;
   padding:10px 92px 10px 12px!important;
   display:flex!important;
   align-items:center!important;
 }
-html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview) .mobile-pool-nav-toggle{
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview) .mobile-pool-nav-toggle{
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
@@ -18668,11 +18668,11 @@ html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonl
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 16px rgba(0,0,0,.30)!important;
   cursor:pointer!important;
 }
-html.local-device-frame body:not(.embedded-readonly-preview) .belt-tabs-stage,
-html.local-device-frame body:not(.embedded-readonly-preview) .belt-tools{
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .belt-tabs-stage,
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .belt-tools{
   display:none!important;
 }
-html.local-device-frame body:not(.embedded-readonly-preview) .mobile-pool-nav-current{
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .mobile-pool-nav-current{
   display:block!important;
   width:100%!important;
   min-width:0!important;
@@ -18687,23 +18687,23 @@ html.local-device-frame body:not(.embedded-readonly-preview) .mobile-pool-nav-cu
   overflow:hidden!important;
   text-overflow:ellipsis!important;
 }
-html.local-device-frame body:not(.embedded-readonly-preview) .mobile-pool-nav-toggle{
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .mobile-pool-nav-toggle{
   right:12px!important;
   top:50%!important;
   bottom:auto!important;
   transform:translateY(-50%)!important;
 }
-html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tabs{
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tabs{
   display:block!important;
   min-height:0!important;
   padding:8px 8px 44px!important;
   align-items:initial!important;
 }
-html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tabs-stage{
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tabs-stage{
   display:block!important;
   width:100%!important;
 }
-html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools{
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools{
   display:grid!important;
   grid-template-columns:1fr!important;
   width:100%!important;
@@ -18711,10 +18711,10 @@ html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonl
   margin:8px 0 0!important;
   gap:6px!important;
 }
-html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .mobile-pool-nav-current{
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .mobile-pool-nav-current{
   display:none!important;
 }
-html.local-device-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .mobile-pool-nav-toggle{
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .mobile-pool-nav-toggle{
   top:auto!important;
   right:10px!important;
   bottom:8px!important;
