@@ -182,7 +182,7 @@ function communityPoolPublicPasscode(poolId){
   return isFreedom250CommunityPool(poolId)?"Freedom250":"";
 }
 function communityPoolInviteUrl(poolId,includeHost){
-  var url=new URL(poolInviteUrl(poolId||currentPoolId||FREEDOM250_PRIMARY_COMMUNITY_POOL_ID,includeHost),window.location.href);
+  var url=new URL(poolJoinUrl(poolId||currentPoolId||FREEDOM250_PRIMARY_COMMUNITY_POOL_ID,includeHost),window.location.href);
   url.searchParams.set("community","1");
   return url.toString();
 }
@@ -602,6 +602,12 @@ function poolInviteUrl(id,includeHost){
   ["new","check","fresh"].forEach(function(k){url.searchParams.delete(k);});
   return url.toString();
 }
+function poolJoinUrl(id,includeHost){
+  var url=new URL(poolInviteUrl(id,includeHost),window.location.href);
+  url.hash="#join-pool";
+  ["deviceSwitcher","devicePreview","deviceFrame","deviceFrameType","deviceHome","embeddedPreview","previewCard","phoneDesignPreview","god","admin"].forEach(function(k){url.searchParams.delete(k);});
+  return url.toString();
+}
 function quickPoolSetupUrl(id){
   var url=new URL(poolInviteUrl(id,true),window.location.href);
   url.hash="#quick-setup";
@@ -695,7 +701,7 @@ async function createAdminPool(poolId,poolName,profile,joinCode,plan,eventId,acc
   var poolEventStatus=normalizeEventStatus(event.eventStatus);
   var poolEventId=event.eventId;
   var poolEventRecord={poolEventId:poolEventId,eventId:event.eventId,eventName:event.eventName,eventLabel:event.eventLabel,eventStatus:event.eventStatus,poolEventStatus:poolEventStatus,createdAt:now,updatedAt:now};
-  var meta={poolId:poolId,poolCode:poolId,joinCode:joinCode,eventId:event.eventId,eventName:event.eventName,eventLabel:event.eventLabel,eventStatus:event.eventStatus,activePoolEventId:poolEventId,completedPoolEventIds:[],poolEvents:{[poolEventId]:poolEventRecord},poolEventStatus:poolEventStatus,poolName:poolName||displayPoolName(poolId),inviteUrl:poolInviteUrl(poolId,true),ownerUid:currentUser.uid,ownerFirstName:profileNames.firstName||firstNameFrom(profile.name),ownerFullName:profileNames.fullName||"",ownerName:profile.name,ownerEmail:profile.email,adminKey:key,entryFee:0,projectedPlayerGoal:0,paymentInstructions:"",payoutNote:"",hostMessage:"",quickSetup:{completed:false,createdAt:now,updatedAt:now},createdAt:now,updatedAt:now};
+  var meta={poolId:poolId,poolCode:poolId,joinCode:joinCode,eventId:event.eventId,eventName:event.eventName,eventLabel:event.eventLabel,eventStatus:event.eventStatus,activePoolEventId:poolEventId,completedPoolEventIds:[],poolEvents:{[poolEventId]:poolEventRecord},poolEventStatus:poolEventStatus,poolName:poolName||displayPoolName(poolId),inviteUrl:poolJoinUrl(poolId,true),ownerUid:currentUser.uid,ownerFirstName:profileNames.firstName||firstNameFrom(profile.name),ownerFullName:profileNames.fullName||"",ownerName:profile.name,ownerEmail:profile.email,adminKey:key,entryFee:0,projectedPlayerGoal:0,paymentInstructions:"",payoutNote:"",hostMessage:"",quickSetup:{completed:false,createdAt:now,updatedAt:now},createdAt:now,updatedAt:now};
   meta=Object.assign({},meta,planPatch);
   if(extraMeta)meta=Object.assign({},meta,extraMeta);
   await setDoc(poolDocFor(poolId),meta,{merge:true});
@@ -3041,7 +3047,7 @@ function applyMemberProfileToPage(){
   if(accessRole)accessRole.textContent=roleLabel;
   if(accessEmail)accessEmail.textContent=email||"Not signed in";
   if(leaveCopy)leaveCopy.textContent=roleLabel==="Host"?"Hosts should transfer admin access or delete the pool from Admin before leaving.":"Leaving removes this pool from your saved pools. Your submitted pool history may remain in the pool record.";
-  if(profileInvite)profileInvite.value=poolInviteUrl(currentPoolCode(),true);
+  if(profileInvite)profileInvite.value=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
   renderKnownPools();
   resetProfileActionButtons();
   updateChatIdentity();
@@ -4417,7 +4423,7 @@ function renderUfc328PreviewFight(fight, index){
 function previewPoolStripHtml(){
   return '<div class="current-pool-strip preview-pool-badge">'
     +'<div class="current-pool-main"><div class="current-pool-strip-label">Pool Name</div><div class="current-pool-strip-name">Dante and the Casuals</div></div>'
-    +'<div class="current-pool-strip-meta"><div class="current-pool-strip-code">Pool name code: <span>dante-casuals</span></div><div class="current-pool-strip-code">Join passcode: <span>casuals328</span></div><div class="current-pool-actions"><button class="current-pool-share-btn" type="button">Share Invite</button><button class="current-pool-copy-btn" type="button">Copy Both Codes</button></div></div>'
+    +'<div class="current-pool-strip-meta"><div class="current-pool-strip-code">Pool name code: <span>dante-casuals</span></div><div class="current-pool-strip-code">Join passcode: <span>casuals328</span></div><div class="current-pool-actions"><button class="current-pool-share-btn" type="button">Share Invite</button></div></div>'
     +'</div>';
 }
 function previewUfc328Fights(){
@@ -4677,7 +4683,7 @@ function renderPreviewMiniPanel(tab){
   }else if(tab==='profile'){
     extra='<div class="preview-mini-field"><span>Display name</span><input value="Dante"></div><div class="preview-mini-actions"><button type="button">Save Profile</button></div>';
   }else if(tab==='pool'){
-    extra='<div class="preview-mini-field"><span>Pool invite link</span><input value="fightlocks.com/join/dante-casuals" readonly></div><div class="preview-mini-actions"><button type="button">Share Invite</button><button type="button">Copy Both Codes</button><button type="button">Email Invite</button></div>';
+    extra='<div class="preview-mini-field"><span>Pool invite link</span><input value="fightlocks.com/join/dante-casuals" readonly></div><div class="preview-mini-actions"><button type="button">Share Invite</button><button type="button">Email Invite</button></div>';
   }else if(tab==='admin'){
     extra='<div class="preview-mini-actions"><button type="button">Enter Results</button><button type="button">Pool Entries</button><button type="button">Edit Scoring</button><button type="button">Next Event</button></div>';
   }else if(tab==='nextevent'){
@@ -5355,7 +5361,7 @@ async function ensurePoolMeta(){
     var rawExistingCode=poolPasscode(poolData.joinCode);
     var existingCode=joinPasscodeLooksGenerated(rawExistingCode,poolCode,currentPoolId)?"":rawExistingCode;
     var event=getCurrentPoolEvent(poolData);
-    var meta={poolId:currentPoolId,poolCode:poolCode,eventId:event.eventId,eventName:event.eventName,eventLabel:event.eventLabel,eventStatus:event.eventStatus,poolName:displayPoolName(currentPoolId),inviteUrl:poolInviteUrl(currentPoolId,true)};
+    var meta={poolId:currentPoolId,poolCode:poolCode,eventId:event.eventId,eventName:event.eventName,eventLabel:event.eventLabel,eventStatus:event.eventStatus,poolName:displayPoolName(currentPoolId),inviteUrl:poolJoinUrl(currentPoolId,true)};
     if(existingCode)meta.joinCode=existingCode;
     if(existingKey)meta.adminKey=existingKey;
     var now=new Date().toISOString();
@@ -5412,7 +5418,7 @@ function inviteShareText(){
   return "Join my Fight Locks pool: "+displayPoolName(currentPoolId)+". Pool name code: "+publicCode+". Join passcode: "+publicPass+". Make your picks here:";
 }
 function inviteMessageText(){
-  return inviteShareText()+" "+(isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolInviteUrl(currentPoolCode(),true));
+  return inviteShareText()+" "+(isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true));
 }
 window.copyPoolInviteMessage=async function(msgId){
   var msg=document.getElementById(msgId||"poolMsg");
@@ -5425,7 +5431,7 @@ window.copyPoolInviteMessage=async function(msgId){
   }
 };
 window.copyPoolInvite=async function(){
-  var msg=document.getElementById(arguments[0]||"poolMsg"), url=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolInviteUrl(currentPoolCode(),true);
+  var msg=document.getElementById(arguments[0]||"poolMsg"), url=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
   try{await navigator.clipboard.writeText(inviteMessageText());showTemporaryMessage(msg,"Invite details copied.",true,180000);}
   catch(e){if(msg)msg.textContent=url;}
 };
@@ -5433,7 +5439,7 @@ window.copySavedPoolInvite=async function(poolId){
   poolId=poolSlug(poolId);
   var msg=document.getElementById("profileMsg")||document.getElementById("poolMsg");
   var pool=(savedPoolsList&&savedPoolsList().find(function(p){return poolSlug(p.poolId)===poolId;}))||{};
-  var url=poolInviteUrl(poolId,true);
+  var url=poolJoinUrl(poolId,true);
   var name=poolFieldValue(pool,["poolName","name","title"])||displayPoolName(poolId);
   var passcode=pool.joinCode||pool.poolCode||"";
   var text="Join my Fight Locks pool: "+name+". Pool name code: "+displayPoolCode(poolId)+(passcode?". Join passcode: "+passcode+".":" .")+" Make your picks here: "+url;
@@ -5446,7 +5452,7 @@ window.copySavedPoolInvite=async function(poolId){
 };
 window.sharePoolInvite=async function(){
   var msg=document.getElementById(arguments[0]||"poolMsg");
-  var url=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolInviteUrl(currentPoolCode(),true);
+  var url=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
   var title=displayPoolName(currentPoolId)+" Fight Locks pool";
   var text=inviteShareText();
   if(navigator.share){
@@ -5468,7 +5474,7 @@ window.sharePoolInvite=async function(){
 window.sendPoolInviteEmail=async function(){
   var input=document.getElementById(arguments[0]||"poolInviteEmail"), msg=document.getElementById(arguments[1]||"poolMsg");
   var email=(input&&input.value||"").trim().toLowerCase();
-  var url=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolInviteUrl(currentPoolCode(),true);
+  var url=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
   if(!validEmail(email)){if(msg)msg.textContent="Enter your friend's email first.";return;}
   var payload={to:email,poolName:displayPoolName(currentPoolId),inviteUrl:url,hostName:(currentMember&&currentMember.name)||"A Fight Locks host"};
   if(msg)msg.textContent="Sending invite...";
@@ -5673,14 +5679,14 @@ function renderPoolShell(){
   if(picksName)picksName.textContent=displayPoolName(currentPoolId);
   if(picksCode)picksCode.textContent=poolCode;
   if(picksPass)picksPass.textContent=joinCode;
-  if(link)link.value=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolInviteUrl(currentPoolCode(),true);
+  if(link)link.value=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
   if(message)message.value=inviteMessageText();
   if(hostMsg){
     hostMsg.style.display="none";
     hostMsg.textContent="";
   }
   var profileLink=document.getElementById("profileInviteLink");
-  if(profileLink)profileLink.value=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolInviteUrl(currentPoolCode(),true);
+  if(profileLink)profileLink.value=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
   syncPoolNameInputs();
   if(typeof syncCommunityPoolUi==="function")syncCommunityPoolUi();
   if(keyBox){
@@ -8187,7 +8193,7 @@ window.copyQuickSetupInviteInfo=async function(){
   var name=((document.getElementById("quickPoolNameInput")||{}).value||displayPoolName(currentPoolId)||"my Fight Locks pool").trim();
   var code=((document.getElementById("quickPoolCodeInput")||{}).value||displayPoolCode(currentPoolCode())).trim();
   var pass=((document.getElementById("quickPoolPasscodeInput")||{}).value||currentJoinCode()||"").trim();
-  var text="Join my Fight Locks pool: "+name+". Pool name code: "+code+(pass?". Join passcode: "+pass+".":".")+" Make your picks here: "+poolInviteUrl(currentPoolCode(),true);
+  var text="Join my Fight Locks pool: "+name+". Pool name code: "+code+(pass?". Join passcode: "+pass+".":".")+" Make your picks here: "+poolJoinUrl(currentPoolCode(),true);
   try{
     await navigator.clipboard.writeText(text);
     quickSetupStatus("Invite info copied. Paste it into a text or group chat.");
@@ -15938,6 +15944,20 @@ if(!firebaseDisabled)onAuthStateChanged(auth,async function(user){
     myDocId=null;
     try{localStorage.removeItem(poolStorageKey('myDocId'));}catch(e){}
 	    renderMemberGate();
+    var signedOutPoolHash=String(window.location.hash||"").replace(/^#/,"").toLowerCase();
+    var signedOutPoolTabIntent=!!({picks:1,leaderboard:1,mine:1,mypicks:1,"my-picks":1,allpicks:1,"all-picks":1,all:1,stats:1,scoring:1,pool:1,invite:1,chat:1,admin:1}[signedOutPoolHash]);
+    if(invitedPoolId&&signedOutPoolTabIntent){
+      accountNeedsPoolChoice=true;
+      markSetupPathReady(true);
+      showLandingOnboarding("join",{preserveHash:false,scroll:false});
+      setSetupMessage("Create an account or sign in first, then join this pool.");
+      setMemberMessage("Create an account or sign in first, then join this pool.");
+      finishAuthBoot();
+      if(godModeRequested){startManualPoolResultsListenerIfAllowed();renderGodDashboard();}
+      updateProgress();
+      renderMySummary();
+      return;
+    }
     if(publicLanding){
       var signedOutRoute=landingRouteFromHash();
       if(signedOutRoute&&signedOutRoute.type==="my-pools")restoreLandingRouteFromHash();
@@ -17168,12 +17188,14 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
       var box=head.closest&&head.closest(".fl-native-simple");
       if(!box)return false;
       box.open=!box.open;
+      box.classList.toggle("open",!!box.open);
       return true;
     }
     if(head.classList.contains("fl-clean-head")){
       var card=head.closest&&head.closest(".fl-clean-card");
       if(!card)return false;
       card.classList.toggle("fl-clean-open");
+      card.classList.toggle("open",card.classList.contains("fl-clean-open"));
       head.setAttribute("aria-expanded",card.classList.contains("fl-clean-open")?"true":"false");
       return true;
     }
@@ -17182,8 +17204,15 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
   function toggleNativeSimpleFromEvent(e){
     var head=accordionHeadAtPoint(e);
     if(!head)return;
+    var now=Date.now();
+    if(now-(window.__fightLocksLastAccordionTap||0)<260){
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+      return;
+    }
     if(!toggleAnyCleanAccordion(head))return;
-    window.__fightLocksLastAccordionTap=Date.now();
+    window.__fightLocksLastAccordionTap=now;
     e.preventDefault();
     e.stopPropagation();
     if(e.stopImmediatePropagation)e.stopImmediatePropagation();
