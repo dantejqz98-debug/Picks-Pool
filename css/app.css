@@ -19001,3 +19001,61 @@ body.landing-route-active .mobile-pool-nav-toggle{
   overflow:hidden!important;
   pointer-events:none!important;
 }
+
+/* Final launch guard: remove the centered title-card background block. */
+#view-picks .fight-card.title,
+#view-picks .fight-card.fight-m1.title,
+#view-picks .fight-card.fight-m2.title,
+#myInlineEditor.make-picks-clone .fight-card.title,
+#myInlineEditor.make-picks-clone .fight-card.fight-m1.title,
+#myInlineEditor.make-picks-clone .fight-card.fight-m2.title,
+.preview-real .fight-card.title,
+.preview-real .fight-card.fight-m1.title,
+.preview-real .fight-card.fight-m2.title,
+.setup-preview .preview-real .fight-card.title,
+.setup-preview .preview-real .fight-card.fight-m1.title,
+.setup-preview .preview-real .fight-card.fight-m2.title,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.title,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m1.title,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m2.title{
+  background-image:linear-gradient(180deg,rgba(0,0,0,.68),rgba(0,0,0,.88)),linear-gradient(180deg,#05070b,#020203)!important;
+  background-color:#020203!important;
+  background-size:100% 100%,100% 100%!important;
+  background-position:center center,center center!important;
+  background-repeat:no-repeat,no-repeat!important;
+}
+#view-picks .fight-card.title::before,
+#view-picks .fight-card.title::after,
+#view-picks .fight-card.fight-m1.title::before,
+#view-picks .fight-card.fight-m1.title::after,
+#view-picks .fight-card.fight-m2.title::before,
+#view-picks .fight-card.fight-m2.title::after,
+#myInlineEditor.make-picks-clone .fight-card.title::before,
+#myInlineEditor.make-picks-clone .fight-card.title::after,
+#myInlineEditor.make-picks-clone .fight-card.fight-m1.title::before,
+#myInlineEditor.make-picks-clone .fight-card.fight-m1.title::after,
+#myInlineEditor.make-picks-clone .fight-card.fight-m2.title::before,
+#myInlineEditor.make-picks-clone .fight-card.fight-m2.title::after,
+.preview-real .fight-card.title::before,
+.preview-real .fight-card.title::after,
+.preview-real .fight-card.fight-m1.title::before,
+.preview-real .fight-card.fight-m1.title::after,
+.preview-real .fight-card.fight-m2.title::before,
+.preview-real .fight-card.fight-m2.title::after,
+.setup-preview .preview-real .fight-card.title::before,
+.setup-preview .preview-real .fight-card.title::after,
+.setup-preview .preview-real .fight-card.fight-m1.title::before,
+.setup-preview .preview-real .fight-card.fight-m1.title::after,
+.setup-preview .preview-real .fight-card.fight-m2.title::before,
+.setup-preview .preview-real .fight-card.fight-m2.title::after,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.title::before,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.title::after,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m1.title::before,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m1.title::after,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m2.title::before,
+body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m2.title::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  background-image:none!important;
+}
