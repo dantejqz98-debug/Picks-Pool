@@ -32,7 +32,7 @@ try{
       var publicFrameRoute=!hash||!!fightLocksBootPublicRoutes[hash];
       var landingFrameRoute=forcedHome&&!params.get("pool")&&publicFrameRoute;
       var lockedToHome=landingFrameRoute&&hash!=="my-pools";
-      var hasPoolRoute=lockedToHome?false:!!(fightLocksBootPoolTabs[hash]||fightLocksBootPoolTabs[activeId]||bodyPool&&params.get("pool"));
+      var hasPoolRoute=lockedToHome?false:!!(fightLocksBootPoolTabs[hash]||fightLocksBootPoolTabs[activeId]||bodyPool&&params.get("pool")&&!publicFrameRoute);
       if(landingFrameRoute)hasPoolRoute=false;
       var isHome=!hasPoolRoute&&(forcedHome||publicFrameRoute);
       var isPool=!!hasPoolRoute&&!isHome;
@@ -159,7 +159,7 @@ try{
     }
     if(label){
       var active=(window.location.hash||"#picks").replace(/^#/,"").toLowerCase();
-      var labels={picks:"Make Your Picks",leaderboard:"Leaderboard",mine:"My Picks",allpicks:"All Picks",stats:"Stats",scoring:"Scoring",nextevent:"Upcoming Events",chat:"Live Chat",profile:"Account",pool:"Invite Friends",admin:"Admin"};
+      var labels={picks:"Make Your Picks",leaderboard:"Leaderboard",mine:"My Picks",allpicks:"All Picks",stats:"Stats",scoring:"Scoring",nextevent:"Upcoming Events",chat:"Live Chat",profile:"Account",pool:"Invite Friends",admin:"Admin",home:"Home Page"};
       label.textContent=collapsed?("Current: "+(labels[active]||"Make Your Picks")):"Menu";
     }
   };
@@ -268,6 +268,63 @@ try{
     try{sessionStorage.setItem("fightLocksPoolReturnRoute",(window.location.hash||"#picks").replace(/^#/,"")||"picks");}catch(e){}
     window.showMyPoolsNavConfirm();
   };
+  window.goToHomePageAfterConfirm=window.goToHomePageAfterConfirm||function(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    if(e&&e.stopPropagation)e.stopPropagation();
+    var modal=document.getElementById("poolNavConfirmModal");
+    if(modal){
+      modal.classList.remove("show");
+      modal.hidden=true;
+      modal.setAttribute("aria-hidden","true");
+      modal.style.display="none";
+    }
+    if(document.body){
+      document.body.classList.remove("pool-experience-active","pool-route-boot","local-device-pool-route-boot","mobile-pool-nav-collapsed");
+      document.body.classList.add("app-profile-locked","landing-route-active");
+    }
+    document.querySelectorAll(".view").forEach(function(view){view.classList.remove("active");});
+    var setup=document.getElementById("setupHome");
+    if(setup){
+      setup.hidden=false;
+      setup.classList.remove("my-pools-active","onboarding-active");
+    }
+    var myPools=document.getElementById("myPoolsView");
+    if(myPools)myPools.hidden=true;
+    if(typeof window.setLandingPublicSection==="function")window.setLandingPublicSection("home",{scroll:true});
+    try{
+      var url=new URL(window.location.href);
+      ["pool","community","new","host"].forEach(function(key){url.searchParams.delete(key);});
+      url.hash="#home";
+      history.replaceState(null,"",url.toString());
+    }catch(err){window.location.hash="#home";}
+    if(typeof window.__fightLocksSyncLocalDeviceFrameRoute==="function")window.__fightLocksSyncLocalDeviceFrameRoute();
+    return false;
+  };
+  window.showHomePageNavConfirm=window.showHomePageNavConfirm||function(){
+    var modal=document.getElementById("poolNavConfirmModal");
+    if(!modal){
+      modal=document.createElement("div");
+      modal.id="poolNavConfirmModal";
+      modal.className="pool-nav-modal";
+      modal.setAttribute("role","dialog");
+      modal.setAttribute("aria-modal","true");
+      document.body.appendChild(modal);
+    }
+    modal.setAttribute("aria-labelledby","poolNavConfirmTitle");
+    modal.innerHTML='<div class="pool-nav-dialog" role="document"><h2 class="pool-nav-title" id="poolNavConfirmTitle">Home Page</h2><p class="pool-nav-copy">You are leaving this pool view and going to the Fight Locks home page. Your picks will stay saved. Do you want to stay or leave?</p><div class="pool-nav-actions"><button type="button" data-pool-nav-stay="1" onclick="return window.stayInCurrentPoolFromNavConfirm(event)">Stay Here</button><button class="primary" type="button" data-pool-nav-home-go="1" onclick="return window.goToHomePageAfterConfirm(event)">Leave to Home Page</button></div></div>';
+    modal.addEventListener("click",function(e){
+      if(e.target&&e.target.closest&&e.target.closest("[data-pool-nav-stay]"))return window.stayInCurrentPoolFromNavConfirm(e);
+      if(e.target&&e.target.closest&&e.target.closest("[data-pool-nav-home-go]"))return window.goToHomePageAfterConfirm(e);
+    },true);
+    modal.hidden=false;
+    modal.removeAttribute("aria-hidden");
+    modal.style.display="flex";
+    modal.classList.add("show");
+  };
+  window.goToHomePageFromPool=window.goToHomePageFromPool||function(){
+    try{sessionStorage.setItem("fightLocksPoolReturnRoute",(window.location.hash||"#picks").replace(/^#/,"")||"picks");}catch(e){}
+    window.showHomePageNavConfirm();
+  };
   document.addEventListener("DOMContentLoaded",function(){
     if(typeof window.syncMobilePoolNavToggle==="function")window.syncMobilePoolNavToggle();
   });
@@ -316,7 +373,7 @@ try{
   })();
 })();
 </script>
-<link rel="stylesheet" href="css/app.css?v=split-20260609av">
+<link rel="stylesheet" href="css/app.css?v=split-20260610bo">
 
 </head>
 <body class="app-profile-locked">
@@ -718,7 +775,7 @@ try{
         <article class="landing-how-step">
           <div class="landing-how-badge">4</div>
           <div class="landing-how-step-body">
-            <h2>Watch the Board</h2>
+            <h2>Watch the Leaderboard</h2>
             <p>See everyone’s picks, track official results, and know exactly who is climbing or falling after each fight.</p>
           </div>
         </article>
@@ -941,7 +998,7 @@ try{
             </details>
             <details class="landing-faq-item">
               <summary>How do people join my pool?</summary>
-              <p>Players can join using the pool invite link or code shared by the host/admin.</p>
+              <p>Players can join using the pool invite link or code shared by the host/admin. If they do not have an account yet, they will be asked to create one first, then join the pool.</p>
             </details>
             <details class="landing-faq-item">
               <summary>Can I create a private pool?</summary>
@@ -954,6 +1011,26 @@ try{
             <details class="landing-faq-item">
               <summary>Can I run a pool for a restaurant, sports bar, venue, or community?</summary>
               <p>Yes. Venue and branded community options can be handled separately from the standard host plans when a group needs a custom fight-night experience.</p>
+            </details>
+          </details>
+
+          <details class="landing-faq-category">
+            <summary class="landing-faq-category-summary">Accounts & Invites</summary>
+            <details class="landing-faq-item">
+              <summary>Do I need an account to join a pool?</summary>
+              <p>Yes. Players need a Fight Locks account so picks, pool history, leaderboard position, and results stay connected to the right person.</p>
+            </details>
+            <details class="landing-faq-item">
+              <summary>What happens when someone sends me an invite link?</summary>
+              <p>The invite link opens the Join a Pool page with the pool details ready to use. Create an account or sign in first, then tap Join By Code to enter the pool.</p>
+            </details>
+            <details class="landing-faq-item">
+              <summary>Why do I need to verify my email?</summary>
+              <p>Email verification helps protect accounts and makes sure each player can get back into the right pools later.</p>
+            </details>
+            <details class="landing-faq-item">
+              <summary>What email should I look for after creating an account?</summary>
+              <p>After creating an account, check your inbox for a verification email. Please check your spam, junk, or promotions folder if you do not see it right away. While we finish verifying the real Fight Locks email sender, the message currently comes from Firebase &lt;noreply@ufc328pool.firebaseapp.com&gt;.</p>
             </details>
           </details>
 
@@ -996,6 +1073,14 @@ try{
               <p>Players can see everyone's picks once the fights begin. This keeps picks private before the event starts and makes fight night more exciting once the action begins.</p>
             </details>
             <details class="landing-faq-item">
+              <summary>Can I change my picks?</summary>
+              <p>Players can change picks before the card locks. Once picks are locked, nobody can change them based on what other players picked.</p>
+            </details>
+            <details class="landing-faq-item">
+              <summary>When do picks lock?</summary>
+              <p>Picks lock at the time shown on the pool page. Always check the countdown and lock time for the specific pool you are playing in.</p>
+            </details>
+            <details class="landing-faq-item">
               <summary>Does Fight Locks update the leaderboard?</summary>
               <p>Yes. Fight Locks is designed to help players follow the leaderboard, track points, and see where they stand during fight night.</p>
             </details>
@@ -1012,20 +1097,12 @@ try{
               <p>Yes. A host can run a pool just for fun, bragging rights, or a free group competition.</p>
             </details>
             <details class="landing-faq-item">
+              <summary>Can hosts decide their own private prize format?</summary>
+              <p>Hosts can decide their own private group format outside Fight Locks, such as bragging rights, winner-takes-all, top two, top three, or another arrangement that works for their group.</p>
+            </details>
+            <details class="landing-faq-item">
               <summary>Can hosts collect money from players privately?</summary>
               <p>If a host chooses to organize a private payment arrangement, that is handled entirely outside Fight Locks between the host and participants.</p>
-            </details>
-            <details class="landing-faq-item">
-              <summary>Can hosts decide their own prize format?</summary>
-              <p>Yes. Hosts can decide their own private group format outside Fight Locks, such as winner-takes-all, top two, top three, or any other arrangement that works for their group.</p>
-            </details>
-            <details class="landing-faq-item">
-              <summary>Does Fight Locks take a percentage of pool money?</summary>
-              <p>No. Fight Locks does not take any percentage of private pool money, entry amounts, prize arrangements, or payouts.</p>
-            </details>
-            <details class="landing-faq-item">
-              <summary>What payment methods can hosts use outside Fight Locks?</summary>
-              <p>Any private payments are handled outside the platform using whatever method the group chooses, such as Cash App, Venmo, Zelle, PayPal, Apple Cash, cash, or another option.</p>
             </details>
             <details class="landing-faq-item">
               <summary>Is Fight Locks responsible for private payment arrangements?</summary>
@@ -1040,8 +1117,12 @@ try{
           <details class="landing-faq-category">
             <summary class="landing-faq-category-summary">Pricing</summary>
             <details class="landing-faq-item">
-              <summary>Pricing</summary>
-              <p>Coming Soon.</p>
+              <summary>What does Fight Locks cost?</summary>
+              <p>During launch, Fight Locks Free Pool includes unlimited players through UFC 329. Paid host options are coming soon for larger, recurring, and more customized pool needs.</p>
+            </details>
+            <details class="landing-faq-item">
+              <summary>What paid options are coming later?</summary>
+              <p>Event Pass, Commissioner, and All Events Pass options are planned for hosts who want bigger events, repeat-host tools, saved settings, and more advanced pool features.</p>
             </details>
           </details>
 
@@ -1069,13 +1150,6 @@ try{
             </details>
           </details>
 
-          <details class="landing-faq-category">
-            <summary class="landing-faq-category-summary">All Events Pass / Founder Deal</summary>
-            <details class="landing-faq-item">
-              <summary>All Events Pass / Founder Deal</summary>
-              <p>Coming Soon.</p>
-            </details>
-          </details>
         </div>
 
         <section class="landing-how-cta">
@@ -1140,7 +1214,7 @@ try{
       <div class="setup-status" id="setupStatus"></div>
       <div class="email-verify-card" id="emailVerifyCard">
         <div class="email-verify-title">Verify your email</div>
-        <p id="emailVerifyText">We sent a verification email. For now, it may come from noreply@ufc328pool.firebaseapp.com while we finish verifying the Fight Locks email. Sorry about that - we're working on it. If you do not see it, check spam, junk, or promotions, then tap the verification link and come back here.</p>
+        <p id="emailVerifyText">We sent a verification email.<span class="verify-spam-warning">Please check your spam, junk, or promotions folder.</span> Look for sender: Firebase &lt;noreply@ufc328pool.firebaseapp.com&gt;. Tap the verification link, then come back here.</p>
         <div class="email-verify-actions">
           <button type="button" onclick="checkEmailVerificationStatus()">I Verified My Email</button>
           <button type="button" onclick="resendAccountVerificationEmail()">Resend Email</button>
@@ -1285,8 +1359,92 @@ try{
         <span>© 2026 Fight Locks. All rights reserved.</span>
         <span>Fight Locks provides platform access and pool-hosting tools only. No betting, wagering, payment processing, or prize handling is provided by Fight Locks.</span>
       </p>
+      <button class="feedback-fab" type="button" onclick="var m=document.getElementById('feedbackModal');if(m){var s=document.getElementById('feedbackStatus');if(s){s.textContent='';s.className='feedback-status';}m.hidden=false;m.removeAttribute('aria-hidden');m.classList.add('show');setTimeout(function(){var t=document.getElementById('feedbackMessageInput');if(t)t.focus();},0);}return false">Feedback</button>
     </div>
   </footer>
+  <div class="feedback-modal" id="feedbackModal" aria-hidden="true">
+    <div class="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+      <button class="feedback-close" type="button" onclick="var m=document.getElementById('feedbackModal');if(m){m.classList.remove('show');m.hidden=true;m.setAttribute('aria-hidden','true');}return false">Close</button>
+      <div class="feedback-kicker">Fight Locks Feedback</div>
+      <h2 id="feedbackModalTitle">Send Feedback</h2>
+      <p class="feedback-copy">Tell us what felt confusing, broken, worth improving, or what you love about Fight Locks.</p>
+      <form class="feedback-form" onsubmit="event.preventDefault();var f=this;var s=document.getElementById('feedbackStatus');var b=document.getElementById('feedbackSubmitBtn');var msg=(document.getElementById('feedbackMessageInput').value||'').trim();if(!msg){if(s){s.className='feedback-status bad';s.textContent='Type your feedback first.';}return false;}if(b){b.disabled=true;b.textContent='Sending...';}if(s){s.className='feedback-status';s.textContent='Sending feedback...';}fetch('/.netlify/functions/send-feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:(document.getElementById('feedbackEmailInput').value||'').trim(),message:msg,pageUrl:location.href,poolId:(new URLSearchParams(location.search).get('pool')||''),userAgent:navigator.userAgent||''})}).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||'Feedback failed');if(s){s.className='feedback-status good';s.textContent='Feedback sent. Thank you.';}f.reset();setTimeout(function(){var m=document.getElementById('feedbackModal');if(m){m.classList.remove('show');m.hidden=true;m.setAttribute('aria-hidden','true');}},900);});}).catch(function(){if(s){s.className='feedback-status bad';s.textContent='Could not send feedback yet. Email team@fight-locks.com if it keeps happening.';}}).finally(function(){if(b){b.disabled=false;b.textContent='Submit Feedback';}});return false">
+        <label><span>Your email</span><input id="feedbackEmailInput" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Optional"></label>
+        <label><span>Feedback</span><textarea id="feedbackMessageInput" name="message" rows="5" maxlength="1600" required placeholder="Type your feedback here"></textarea></label>
+        <div class="feedback-actions">
+          <button type="button" onclick="var m=document.getElementById('feedbackModal');if(m){m.classList.remove('show');m.hidden=true;m.setAttribute('aria-hidden','true');}return false">Cancel</button>
+          <button class="primary" id="feedbackSubmitBtn" type="submit">Submit Feedback</button>
+        </div>
+        <div class="feedback-status" id="feedbackStatus"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+  (function(){
+    function feedbackStatus(text,tone){
+      var el=document.getElementById("feedbackStatus");
+      if(!el)return;
+      el.classList.toggle("bad",tone==="bad");
+      el.classList.toggle("good",tone==="good");
+      el.textContent=text||"";
+    }
+    window.openFeedbackModal=function(){
+      var modal=document.getElementById("feedbackModal");
+      if(!modal)return false;
+      feedbackStatus("");
+      modal.hidden=false;
+      modal.removeAttribute("aria-hidden");
+      modal.classList.add("show");
+      setTimeout(function(){
+        var input=document.getElementById("feedbackMessageInput");
+        if(input)input.focus();
+      },0);
+      return false;
+    };
+    window.closeFeedbackModal=function(){
+      var modal=document.getElementById("feedbackModal");
+      if(!modal)return false;
+      modal.classList.remove("show");
+      modal.hidden=true;
+      modal.setAttribute("aria-hidden","true");
+      return false;
+    };
+    window.submitFeedback=async function(event){
+      if(event&&event.preventDefault)event.preventDefault();
+      var email=(document.getElementById("feedbackEmailInput")||{}).value||"";
+      var messageEl=document.getElementById("feedbackMessageInput");
+      var message=(messageEl&&messageEl.value||"").trim();
+      var btn=document.getElementById("feedbackSubmitBtn");
+      if(!message){feedbackStatus("Type your feedback first.","bad");return false;}
+      if(btn){btn.disabled=true;btn.textContent="Sending...";}
+      feedbackStatus("Sending feedback...");
+      try{
+        var response=await fetch("/.netlify/functions/send-feedback",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            email:email.trim(),
+            message:message,
+            pageUrl:location.href,
+            poolId:(new URLSearchParams(location.search).get("pool")||""),
+            userAgent:navigator.userAgent||""
+          })
+        });
+        var data={};
+        try{data=await response.json();}catch(e){}
+        if(!response.ok)throw new Error(data.error||"Feedback failed");
+        feedbackStatus("Feedback sent. Thank you.","good");
+        if(messageEl)messageEl.value="";
+        setTimeout(window.closeFeedbackModal,900);
+      }catch(error){
+        feedbackStatus("Could not send feedback yet. Email team@fight-locks.com if it keeps happening.","bad");
+      }finally{
+        if(btn){btn.disabled=false;btn.textContent="Submit Feedback";}
+      }
+      return false;
+    };
+  })();
+  </script>
   <div class="policy-modal" id="policyModal" aria-hidden="true">
     <div class="policy-dialog" role="dialog" aria-modal="true" aria-labelledby="policyModalTitle">
       <button class="policy-close" type="button" onclick="closePolicyModal()">Close</button>
@@ -1349,6 +1507,7 @@ try{
       <button class="tab belt-main-tab my-picks" id="myTab" onclick="showTab('mine',this)"><span class="tab-label">My Picks</span></button>
       <button class="tab belt-main-tab all-picks" onclick="showTab('allpicks',this)"><span class="tab-label">All Picks</span></button>
       <button class="tab belt-main-tab stats" onclick="showTab('stats',this)"><span class="tab-label">Stats</span></button>
+      <button class="tab belt-main-tab phone-main-chat" onclick="showTab('chat',this)"><span class="tab-label">Live Chat</span></button>
     </div>
   </div>
 	  <div class="belt-tools" aria-label="More navigation">
@@ -1356,17 +1515,87 @@ try{
 	      <button class="tab tab-secondary" onclick="showTab('scoring',this)"><span class="tab-label">Scoring</span></button>
 	      <button class="tab tab-secondary" onclick="showTab('nextevent',this)"><span class="tab-label">Upcoming Events</span></button>
 	      <button class="tab tab-with-badge tab-secondary" id="chatTabBtn" onclick="showTab('chat',this)"><span>Live Chat</span><span id="chatNotifBadge" class="chat-notif-badge">0</span></button>
+      <button class="tab tab-secondary phone-secondary-stats" onclick="showTab('stats',this)"><span class="tab-label">Stats</span></button>
+      <button class="tab tab-secondary" id="myPoolsTabBtn" onclick="(window.goToMyPoolsFromPool||function(){location.hash='my-pools';})()"><span class="tab-label">My Pools</span></button>
     </div>
     <div class="belt-tools-group belt-tools-right">
-      <button class="tab tab-secondary" id="myPoolsTabBtn" onclick="(window.goToMyPoolsFromPool||function(){location.hash='my-pools';})()"><span class="tab-label">My Pools</span></button>
       <button class="tab tab-secondary" onclick="showTab('profile',this)"><span class="tab-label">Account</span></button>
-      <button class="tab tab-secondary" onclick="showTab('pool',this)"><span class="tab-label">Invite Friends</span></button>
+	      <button class="tab tab-secondary" onclick="showTab('pool',this)"><span class="tab-label">Invite Friends</span></button>
 	      <button class="tab tab-secondary" onclick="showTab('admin',this)"><span class="tab-label">Admin</span></button>
+	      <button class="tab tab-secondary" id="homePageTabBtn" onclick="event.preventDefault();event.stopPropagation();var m=document.getElementById('poolNavConfirmModal')||document.body.appendChild(document.createElement('div'));m.id='poolNavConfirmModal';m.className='pool-nav-modal show';m.hidden=false;m.removeAttribute('aria-hidden');m.style.display='flex';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.innerHTML='<div class=&quot;pool-nav-dialog&quot; role=&quot;document&quot;><h2 class=&quot;pool-nav-title&quot;>Home Page</h2><p class=&quot;pool-nav-copy&quot;>You are leaving this pool view and going to the Fight Locks home page. Your picks will stay saved. Do you want to stay or leave?</p><div class=&quot;pool-nav-actions&quot;><button type=&quot;button&quot; onclick=&quot;var m=document.getElementById(\\'poolNavConfirmModal\\');if(m){m.classList.remove(\\'show\\');m.hidden=true;m.style.display=\\'none\\';}return false&quot;>Stay Here</button><button class=&quot;primary&quot; type=&quot;button&quot; onclick=&quot;var m=document.getElementById(\\'poolNavConfirmModal\\');if(m){m.classList.remove(\\'show\\');m.hidden=true;m.style.display=\\'none\\';}document.body.classList.remove(\\'pool-experience-active\\',\\'pool-route-boot\\',\\'local-device-pool-route-boot\\',\\'mobile-pool-nav-collapsed\\');document.body.classList.add(\\'app-profile-locked\\',\\'landing-route-active\\');document.querySelectorAll(\\'.view\\').forEach(function(v){v.classList.remove(\\'active\\')});var s=document.getElementById(\\'setupHome\\');if(s){s.hidden=false;s.classList.remove(\\'my-pools-active\\',\\'onboarding-active\\');}var p=document.getElementById(\\'myPoolsView\\');if(p)p.hidden=true;if(window.setLandingPublicSection)window.setLandingPublicSection(\\'home\\',{scroll:true});try{var u=new URL(location.href);[\\'pool\\',\\'community\\',\\'new\\',\\'host\\'].forEach(function(k){u.searchParams.delete(k)});u.hash=\\'#home\\';history.replaceState(null,\\'\\',u.toString());}catch(e){location.hash=\\'#home\\';}if(window.__fightLocksSyncLocalDeviceFrameRoute)window.__fightLocksSyncLocalDeviceFrameRoute();return false&quot;>Leave to Home Page</button></div></div>';return false"><span class="tab-label">Home Page</span></button>
 	    </div>
 	  </div>
+	  <div class="pool-nav-helper" aria-hidden="true">Your Navigation Tool</div>
 	  <div class="mobile-pool-nav-current" id="mobilePoolNavCurrent">Menu</div>
 	  <button class="mobile-pool-nav-toggle" id="mobilePoolNavToggle" type="button" aria-expanded="true" onclick="toggleMobilePoolNav()">Close</button>
 	</div>
+<script>
+(function(){
+  function closePoolNavConfirm(){
+    var modal=document.getElementById("poolNavConfirmModal");
+    if(!modal)return;
+    modal.classList.remove("show");
+    modal.hidden=true;
+    modal.setAttribute("aria-hidden","true");
+    modal.style.display="none";
+  }
+  window.goToHomePageAfterConfirm=function(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    if(e&&e.stopPropagation)e.stopPropagation();
+    closePoolNavConfirm();
+    if(document.body){
+      document.body.classList.remove("pool-experience-active","pool-route-boot","local-device-pool-route-boot","mobile-pool-nav-collapsed");
+      document.body.classList.add("app-profile-locked","landing-route-active");
+    }
+    document.querySelectorAll(".view").forEach(function(view){view.classList.remove("active");});
+    var setup=document.getElementById("setupHome");
+    if(setup){
+      setup.hidden=false;
+      setup.classList.remove("my-pools-active","onboarding-active");
+    }
+    var myPools=document.getElementById("myPoolsView");
+    if(myPools)myPools.hidden=true;
+    if(typeof window.setLandingPublicSection==="function")window.setLandingPublicSection("home",{scroll:true});
+    try{
+      var url=new URL(window.location.href);
+      ["pool","community","new","host"].forEach(function(key){url.searchParams.delete(key);});
+      url.hash="#home";
+      history.replaceState(null,"",url.toString());
+    }catch(err){window.location.hash="#home";}
+    if(typeof window.__fightLocksSyncLocalDeviceFrameRoute==="function")window.__fightLocksSyncLocalDeviceFrameRoute();
+    return false;
+  };
+  window.showHomePageNavConfirm=function(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    if(e&&e.stopPropagation)e.stopPropagation();
+    var modal=document.getElementById("poolNavConfirmModal");
+    if(!modal){
+      modal=document.createElement("div");
+      modal.id="poolNavConfirmModal";
+      modal.className="pool-nav-modal";
+      modal.setAttribute("role","dialog");
+      modal.setAttribute("aria-modal","true");
+      document.body.appendChild(modal);
+    }
+    modal.setAttribute("aria-labelledby","poolNavConfirmTitle");
+    modal.innerHTML='<div class="pool-nav-dialog" role="document"><h2 class="pool-nav-title" id="poolNavConfirmTitle">Home Page</h2><p class="pool-nav-copy">You are leaving this pool view and going to the Fight Locks home page. Your picks will stay saved. Do you want to stay or leave?</p><div class="pool-nav-actions"><button type="button" data-pool-nav-stay="1">Stay Here</button><button class="primary" type="button" data-pool-nav-home-go="1">Leave to Home Page</button></div></div>';
+    modal.onclick=function(event){
+      if(event.target&&event.target.closest&&event.target.closest("[data-pool-nav-stay]")){closePoolNavConfirm();return false;}
+      if(event.target&&event.target.closest&&event.target.closest("[data-pool-nav-home-go]"))return window.goToHomePageAfterConfirm(event);
+      if(event.target===modal)closePoolNavConfirm();
+    };
+    modal.hidden=false;
+    modal.removeAttribute("aria-hidden");
+    modal.style.display="flex";
+    modal.classList.add("show");
+    return false;
+  };
+  document.addEventListener("click",function(e){
+    var btn=e.target&&e.target.closest&&e.target.closest("#homePageTabBtn");
+    if(btn)return window.showHomePageNavConfirm(e);
+  },true);
+})();
+</script>
 
 <div id="view-quicksetup" class="view">
   <div class="quick-setup-shell quick-wizard-ready quick-step-first quick-money-entry-step">
@@ -1669,7 +1898,14 @@ try{
 
 <!-- MY PICKS -->
 <div id="view-picks" class="view active">
-  <div class="current-pool-strip">
+  <div class="current-pool-strip picks-collapsible-card" id="currentPoolInfoCard" data-collapse-key="poolInfo">
+    <button class="picks-card-toggle" type="button" onclick="return window.togglePicksInfoCard?window.togglePicksInfoCard('currentPoolInfoCard'):(function(card){var collapsed=!card.classList.contains('is-collapsed');card.classList.toggle('is-collapsed',collapsed);var b=card.querySelector('.picks-card-toggle'),s=card.querySelector('.picks-card-toggle-state');if(b)b.setAttribute('aria-expanded',collapsed?'false':'true');if(s)s.textContent=collapsed?'Open':'Close';try{localStorage.setItem('ufc250_'+((new URLSearchParams(location.search).get('pool')||'default').toLowerCase())+'_picksInfoCardCollapsed:poolInfo',collapsed?'1':'0');}catch(e){}return false;})(document.getElementById('currentPoolInfoCard'))" aria-expanded="true">
+      <span>
+        <span class="picks-card-kicker">Pool Details</span>
+        <span class="picks-card-title" id="currentPicksPoolToggleName">Dante and the Casuals</span>
+      </span>
+      <span class="picks-card-toggle-state">Close</span>
+    </button>
     <div class="current-pool-main">
       <div class="current-pool-strip-label">Pool Name</div>
       <div class="current-pool-strip-name" id="currentPicksPoolName">Dante and the Casuals</div>
@@ -1683,12 +1919,66 @@ try{
       <div class="current-pool-copy-msg" id="currentPoolCopyMsg"></div>
     </div>
   </div>
-  <div class="make-picks-intro">
-    <div class="make-picks-intro-title">Make Your Picks</div>
-    <div class="make-picks-intro-copy">Make your picks on each fight, then save them at the bottom. Once the event starts, picks lock so nobody can change them based on other players in the pool. After that, keep an eye on the Leaderboard, check My Picks to see yours, and open All Picks to see everybody&rsquo;s.</div>
+  <div class="make-picks-intro picks-collapsible-card" id="makePicksHelpCard" data-collapse-key="makePicksHelp">
+    <button class="picks-card-toggle" type="button" onclick="return window.togglePicksInfoCard?window.togglePicksInfoCard('makePicksHelpCard'):(function(card){var collapsed=!card.classList.contains('is-collapsed');card.classList.toggle('is-collapsed',collapsed);var b=card.querySelector('.picks-card-toggle'),s=card.querySelector('.picks-card-toggle-state');if(b)b.setAttribute('aria-expanded',collapsed?'false':'true');if(s)s.textContent=collapsed?'Open':'Close';try{localStorage.setItem('ufc250_'+((new URLSearchParams(location.search).get('pool')||'default').toLowerCase())+'_picksInfoCardCollapsed:makePicksHelp',collapsed?'1':'0');}catch(e){}return false;})(document.getElementById('makePicksHelpCard'))" aria-expanded="true">
+      <span>
+        <span class="picks-card-kicker">Before You Make Your Picks</span>
+        <span class="picks-card-title">How To Play</span>
+      </span>
+      <span class="picks-card-toggle-state">Close</span>
+    </button>
+    <div class="make-picks-intro-body">
+      <ol class="make-picks-steps">
+        <li>Pick every fight below.</li>
+        <li>Add any extra picks shown, like method, round, or Over/Under.</li>
+        <li>Tap <strong>Lock In Picks</strong> at the bottom to submit.</li>
+        <li>You can edit before picks lock, then tap <strong>Update Picks</strong>.</li>
+        <li>Open <strong>My Picks</strong> to review your saved picks.</li>
+        <li>After fights start, watch the <strong>Leaderboard</strong> and <strong>All Picks</strong> to see who jumps, who slides, and how the pool changes.</li>
+      </ol>
+    </div>
   </div>
+  <script>
+  (function(){
+    function storageKey(card){
+      try{
+        var pool=(new URLSearchParams(location.search).get("pool")||"default").toLowerCase();
+        var key=(card&&card.getAttribute&&card.getAttribute("data-collapse-key"))||card&&card.id||"card";
+        return "ufc250_"+pool+"_picksInfoCardCollapsed:"+key;
+      }catch(e){return "ufc250_default_picksInfoCardCollapsed:card";}
+    }
+    function setCard(card,collapsed){
+      if(!card)return;
+      card.classList.toggle("is-collapsed",!!collapsed);
+      var btn=card.querySelector(".picks-card-toggle");
+      var state=card.querySelector(".picks-card-toggle-state");
+      if(btn)btn.setAttribute("aria-expanded",collapsed?"false":"true");
+      if(state)state.textContent=collapsed?"Open":"Close";
+    }
+    window.togglePicksInfoCard=window.togglePicksInfoCard||function(id){
+      var card=document.getElementById(id);
+      if(!card)return false;
+      var collapsed=!card.classList.contains("is-collapsed");
+      setCard(card,collapsed);
+      try{localStorage.setItem(storageKey(card),collapsed?"1":"0");}catch(e){}
+      return false;
+    };
+    window.applyPicksInfoCardState=window.applyPicksInfoCardState||function(){
+      ["currentPoolInfoCard","makePicksHelpCard"].forEach(function(id){
+        var card=document.getElementById(id);
+        if(!card)return;
+        var collapsed=false;
+        try{collapsed=localStorage.getItem(storageKey(card))==="1";}catch(e){}
+        setCard(card,collapsed);
+      });
+    };
+    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",window.applyPicksInfoCardState);
+    else window.applyPicksInfoCardState();
+  })();
+  </script>
   <div id="adminWelcome" class="admin-welcome"></div>
   <div id="poolHostMessage" class="admin-notices-intro" style="display:none"></div>
+  <div id="hostJoinNotice" class="host-join-notice" hidden></div>
   <div id="adminJoinRequests" class="admin-join-requests"></div>
   <div id="lockedMsg" style="display:none;background:#742a2a;border:1px solid #9b2c2c;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">
     <div style="font-size:16px;font-weight:700;color:#fc8181;margin-bottom:4px">🔒 Picks Locked</div>
@@ -1982,44 +2272,6 @@ try{
       </div>
       <div class="admin-key-note">Reopen the guided setup flow for invite details, entry info, payouts, scoring, and card settings.</div>
     </div>
-    <div class="admin-key-card admin-compact-card" id="adminBillingCard">
-      <div class="admin-key-head">
-        <div>
-          <div class="admin-key-kicker">Account & billing</div>
-          <div class="admin-key-title">Billing & Plan</div>
-        </div>
-        <button class="btn-edit" type="button" onclick="openBillingPlanCenter()">Manage Plan</button>
-      </div>
-      <div class="profile-access-summary">
-        <div><span>Current Plan</span><strong id="adminBillingPlan">Fight Locks Free Pool</strong></div>
-        <div><span>Billing Owner</span><strong id="adminBillingOwner">Pool host</strong></div>
-        <div><span>Status</span><strong id="adminBillingStatus">Launch testing</strong></div>
-      </div>
-      <div class="admin-key-note">The pool owner controls billing and plan access. Co-hosts can help manage the pool, but billing stays with the owner account.</div>
-      <div class="admin-key-note">Checkout and subscription management will connect here. Until then, use Pricing to review plans or contact Fight Locks support.</div>
-      <div class="quick-launch-code admin-launch-code" id="adminLaunchCodePanel" hidden>
-        <div class="quick-launch-code-copy"><strong>Launch Promo</strong><span>Unlimited players are automatic through UFC 329.</span></div>
-        <div class="quick-launch-code-row">
-          <input id="adminLaunchCodeInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Enter code">
-          <button type="button" onclick="adminApplyLaunchCode()">Apply Code</button>
-        </div>
-        <div class="quick-launch-code-msg" id="adminLaunchCodeMsg"></div>
-      </div>
-      <div class="billing-upgrade-panel" id="adminBillingUpgradePanel">
-        <div>
-          <strong>Upgrade when the pool grows</strong>
-          <p id="adminBillingUpgradeCopy">Free Pool is great for a small crew. Upgrade when you want unlimited players, recurring access, or player results history across events.</p>
-        </div>
-        <div class="billing-upgrade-options">
-          <div class="billing-upgrade-option"><span>Event Pass</span><small>Unlimited players for one card.</small></div>
-          <div class="billing-upgrade-option"><span>Commissioner</span><small>Monthly access for repeat pools.</small></div>
-          <div class="billing-upgrade-option"><span>All Events Pass</span><small>Best value for a full year.</small></div>
-        </div>
-        <div class="billing-upgrade-actions">
-          <button type="button" onclick="openBillingPlanCenter()">Compare Plans</button>
-        </div>
-      </div>
-    </div>
     <div class="admin-key-card">
       <div class="admin-key-head">
         <div>
@@ -2035,22 +2287,6 @@ try{
       <div class="auth-mini-actions admin-pool-save-actions"><button class="auth-primary-action" type="button" onclick="savePoolName('adminPoolNameMsg')">Save Pool Settings</button></div>
       <div class="admin-key-note">Friends join using the Pool Name Code and Join Passcode. The Pool Name Code is unique. The Pool Name can be changed anytime.</div>
       <div class="admin-key-msg" id="adminPoolNameMsg"></div>
-    </div>
-    <div class="admin-key-card admin-compact-card" id="adminKeyCard">
-      <div class="admin-key-head">
-        <div>
-          <div class="admin-key-kicker">Trusted helpers</div>
-          <div class="admin-key-title">Co-Host Access</div>
-        </div>
-      </div>
-      <div class="admin-transfer-row">
-        <select class="edit-select" id="coHostSelect"></select>
-        <button class="btn-edit" id="coHostAddBtn" type="button" onclick="grantCoHostAccess()">Add Co-Host</button>
-      </div>
-      <div class="admin-key-note">Choose someone who has already joined this pool. Co-hosts can open Admin and help manage setup, entries, chat, visibility, and scoring controls.</div>
-      <div class="admin-key-note">Only add someone you trust. Regular players will not see Admin unless you grant them co-host access.</div>
-      <div class="admin-cohost-list" id="coHostList"></div>
-      <div class="admin-key-msg" id="adminKeyMsg"></div>
     </div>
     <div class="admin-key-card admin-compact-card" id="adminTransferCard">
       <div class="admin-key-head">
@@ -2074,52 +2310,6 @@ try{
     <div class="card" id="adminNotificationsCard">
       <h3>Pool Notices</h3>
       <div id="adminNotifications"><div class="admin-notices-intro">Pool notices help you track important activity inside this pool, such as players joining, pool settings changing, picks locking, results being updated, and admin changes.</div><div class="empty" style="padding:12px">No pool notices yet.<br>Important pool activity will appear here once players join or settings are updated.</div><div class="admin-notices-examples">Examples: player joined, pool settings saved, picks locked, results updated, admin transferred.</div></div>
-    </div>
-    <div class="card admin-accordion" id="adminSectionFee">
-      <button class="admin-acc-head" type="button" onclick="toggleAdminSection('adminSectionFee')">
-        <span class="admin-acc-head-title"><strong>Private Pool Format</strong><span>Track optional entry amounts and prize format handled outside Fight Locks.</span></span>
-        <span class="admin-acc-chevron">▼</span>
-      </button>
-      <div class="admin-acc-body">
-        <div class="admin-key-note">Fight Locks does not accept entry fees, hold pool funds, process player payments, manage payouts, distribute winnings, or take a percentage of private pool money. Any private entry amounts or prize arrangements are handled outside Fight Locks by the host and participants.</div>
-        <div class="admin-key-note">This section is only a tracker for the host. It does not collect, send, hold, or distribute money.</div>
-        <div class="fee-row">
-          <span style="font-size:22px;color:var(--muted)">$</span>
-          <input type="number" class="fee-input" id="feeInput" value="15" min="1" max="9999" oninput="updateFee(this.value)"/>
-          <span style="font-size:13px;color:var(--muted)">optional entry amount</span>
-        </div>
-        <div class="payout-editor">
-          <div class="payout-title">Projected Pool Total</div>
-          <div class="payout-grid">
-            <div class="payout-field"><label>Projected Player Goal</label><input id="projectedPlayerGoalInput" type="number" min="0" step="1" placeholder="Not set" oninput="updateProjectedPlayerGoal(this.value)"></div>
-          </div>
-          <div class="admin-key-note" id="projectedPlayerGoalNote">Estimate how many players you expect to join. This is used to show a projected pool total before picks lock.</div>
-        </div>
-        <div class="payout-editor">
-          <div class="payout-title">Prize Format</div>
-          <div class="payout-grid">
-            <div class="payout-field"><label>Prize Format</label><select id="payoutPlaces" onchange="updatePayoutSettings()"><option value="1">Winner Takes All</option><option value="2">1st and 2nd</option><option value="3">1st, 2nd, and 3rd</option></select></div>
-            <div class="payout-field" id="payoutFirstField"><label>1st Place %</label><input id="payoutFirst" type="number" min="0" max="100" step="0.1" value="100" oninput="updatePayoutSettings()"></div>
-            <div class="payout-field" id="payoutSecondField"><label>2nd Place %</label><input id="payoutSecond" type="number" min="0" max="100" step="0.1" value="0" oninput="updatePayoutSettings()"></div>
-            <div class="payout-field" id="payoutThirdField"><label>3rd Place %</label><input id="payoutThird" type="number" min="0" max="100" step="0.1" value="0" oninput="updatePayoutSettings()"></div>
-          </div>
-          <div class="payout-preview" id="payoutPreview">Private prize format tracker.</div>
-        </div>
-        <div class="fee-msg" id="feeMsg"></div>
-      </div>
-    </div>
-    <div class="card admin-accordion" id="adminSectionScoring">
-      <button class="admin-acc-head" type="button" onclick="toggleAdminSection('adminSectionScoring')">
-        <span class="admin-acc-head-title"><strong>Odds & Scoring System</strong><span>Review fighter odds and manage scoring settings.</span></span>
-        <span class="admin-acc-chevron">▼</span>
-      </button>
-      <div class="admin-acc-body">
-        <p style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:12px">
-          Fighter odds are shown for reference and point calculation. Odds are system-controlled and are not manually edited by admins.
-        </p>
-        <div id="adminScoringEditor"></div>
-        <div class="admin-score-msg" id="adminScoringMsg"></div>
-      </div>
     </div>
     <div class="card admin-accordion" id="adminSectionVisibility">
       <button class="admin-acc-head" type="button" onclick="toggleAdminSection('adminSectionVisibility')">
@@ -2212,12 +2402,12 @@ try{
   </div>
 </div>
 
-<script src="js/permissions.js?v=split-20260609av"></script>
-<script src="js/events.js?v=split-20260609av"></script>
-<script src="js/picksData.js?v=split-20260609av"></script>
-<script src="js/leaderboard.js?v=split-20260609av"></script>
-<script type="module" src="js/app-main.js?v=split-20260609av"></script>
-<script src="js/app-polish.js?v=split-20260609av"></script>
+<script src="js/permissions.js?v=split-20260610bo"></script>
+<script src="js/events.js?v=split-20260610bo"></script>
+<script src="js/picksData.js?v=split-20260610bo"></script>
+<script src="js/leaderboard.js?v=split-20260610bo"></script>
+<script type="module" src="js/app-main.js?v=split-20260610bo"></script>
+<script src="js/app-polish.js?v=split-20260610bo"></script>
 
 
 

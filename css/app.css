@@ -76,6 +76,27 @@ input:focus{border-color:var(--red)}
 .lb-name{font-size:15px;font-weight:600}
 .lb-pts{font-size:22px;font-weight:700;color:var(--gold)}
 .lb-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.lb-casual-stamp{
+  margin:0 auto;
+  padding:5px 11px 4px;
+  border:2px solid rgba(255,118,118,.82);
+  border-radius:7px;
+  color:#ffb4b4;
+  -webkit-text-fill-color:#ffb4b4;
+  background:rgba(127,29,29,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 18px rgba(0,0,0,.24);
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:17px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  text-shadow:0 2px 8px rgba(0,0,0,.86);
+  transform:rotate(-4deg)!important;
+}
+.lb-entry.casual-preview-last{
+  border-color:rgba(255,118,118,.34);
+}
 .lb-champion-stack{
   display:grid;
   gap:7px;
@@ -121,6 +142,7 @@ input:focus{border-color:var(--red)}
 .ap-row:last-child{border-bottom:none}
 .ap-name{font-size:13px;font-weight:600}
 .ap-score{font-size:11px;font-weight:700;color:var(--gold);margin-top:2px}
+.legacy-name-card{display:none!important}
 .ap-right{text-align:right}
 .ap-pick{display:flex;align-items:center;gap:5px;justify-content:flex-end}
 .ap-tag{font-size:11px;font-weight:500;padding:3px 8px;border-radius:99px}
@@ -3338,6 +3360,12 @@ body.god-mode .god-mode-view{
 .fight-score-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:rgba(214,158,46,.12);border:1px solid rgba(214,158,46,.24);color:#f6d46b;font-family:"Bebas Neue",Impact,sans-serif;font-size:12px;font-weight:950;letter-spacing:.055em;text-transform:uppercase;white-space:nowrap}
 .fight-score-pill.zero{background:rgba(127,29,29,.20);border-color:rgba(252,129,129,.20);color:#fca5a5}
 .fight-score-pill.pending{background:rgba(63,63,70,.38);border-color:rgba(255,255,255,.10);color:#a1a1aa}
+.my-score-timeline{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;max-width:100%!important;margin:0 0 7px!important;padding:6px 9px!important;border-radius:999px!important;border:1px solid rgba(214,158,46,.48)!important;background:linear-gradient(180deg,rgba(214,158,46,.22),rgba(0,0,0,.54))!important;color:#f6d46b!important;-webkit-text-fill-color:#f6d46b!important;font-family:"Bebas Neue",Impact,sans-serif!important;font-size:13px!important;line-height:1.05!important;letter-spacing:.045em!important;text-align:center!important;text-transform:uppercase!important;white-space:normal!important;overflow-wrap:anywhere!important;text-shadow:0 2px 7px rgba(0,0,0,.85)!important}
+.my-score-timeline.hit{border-color:rgba(104,211,145,.42)!important;background:linear-gradient(180deg,rgba(28,69,50,.78),rgba(0,0,0,.54))!important;color:#68d391!important;-webkit-text-fill-color:#68d391!important}
+.my-score-timeline.miss{border-color:rgba(252,129,129,.42)!important;background:linear-gradient(180deg,rgba(127,29,29,.60),rgba(0,0,0,.54))!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important}
+.my-summary-timeline{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:max-content!important;max-width:100%!important;margin-top:4px!important;padding:4px 8px!important;border-radius:999px!important;border:1px solid rgba(214,158,46,.42)!important;background:rgba(214,158,46,.12)!important;color:#f6d46b!important;-webkit-text-fill-color:#f6d46b!important;font-family:"Bebas Neue",Impact,sans-serif!important;font-size:11px!important;line-height:1.05!important;letter-spacing:.045em!important;text-align:center!important;text-transform:uppercase!important;white-space:normal!important;overflow-wrap:anywhere!important;text-shadow:0 2px 7px rgba(0,0,0,.85)!important}
+.my-summary-timeline.hit{border-color:rgba(104,211,145,.42)!important;background:rgba(28,69,50,.46)!important;color:#68d391!important;-webkit-text-fill-color:#68d391!important}
+.my-summary-timeline.miss{border-color:rgba(252,129,129,.42)!important;background:rgba(127,29,29,.36)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important}
 .my-official-wrap{margin-top:12px;background:linear-gradient(180deg,#1c1c1c,#151515);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,.25)}
 .my-official-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22)}
 .my-official-title{font-family:"Bebas Neue",Impact,sans-serif;font-size:22px;font-weight:950;letter-spacing:.06em;text-transform:uppercase;color:#fff}
@@ -3351,6 +3379,19 @@ body.god-mode .god-mode-view{
 .my-pick-chevron{color:#d69e2e;font-size:12px;transition:transform .18s ease}
 .my-pick-detail[open] .my-pick-chevron{transform:rotate(180deg)}
 .my-pick-detail .my-row{border-bottom:0;background:rgba(0,0,0,.10)}
+.my-pick-detail[open] .my-row{
+  display:flex!important;
+  visibility:visible!important;
+  height:auto!important;
+  width:auto!important;
+  min-height:0!important;
+}
+.my-pick-detail[open] .my-fight-wrap,
+.my-pick-detail[open] .fight-score-line{
+  visibility:visible!important;
+  height:auto!important;
+  width:auto!important;
+}
 .ap-lock-line{margin-top:7px;display:flex;justify-content:flex-end}
 .ap-lock-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:linear-gradient(180deg,#fff4b8 0%,#e7b94f 42%,#9a5d13 100%);border:1px solid rgba(255,236,168,.86);color:#111827;-webkit-text-fill-color:#111827;text-shadow:0 1px 0 rgba(255,255,255,.66);box-shadow:inset 0 1px 0 rgba(255,255,255,.72),inset 0 -1px 0 rgba(77,43,5,.35),0 8px 18px rgba(0,0,0,.32),0 0 18px rgba(231,185,79,.28);font-family:"Bebas Neue",Impact,sans-serif;font-size:11px;font-weight:950;letter-spacing:.055em;text-transform:uppercase;white-space:nowrap}
 .ap-lock-pill.miss{background:rgba(127,29,29,.24);border-color:rgba(252,129,129,.26);color:#fca5a5}
@@ -4217,6 +4258,265 @@ body.god-mode .god-mode-view{
   -webkit-text-fill-color:#aeb8c6;
   font-size:11px;
 }
+.host-join-notice{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 14px;
+  padding:12px 13px;
+  border-radius:13px;
+  border:1px solid rgba(104,211,145,.42);
+  background:linear-gradient(135deg,rgba(12,75,48,.82),rgba(0,0,0,.58));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 24px rgba(0,0,0,.20);
+  color:#ecfdf5;
+  -webkit-text-fill-color:#ecfdf5;
+}
+.host-join-notice[hidden]{display:none!important}
+.host-join-notice-copy{min-width:0}
+.host-join-notice-kicker{
+  color:#68d391;
+  -webkit-text-fill-color:#68d391;
+  font-size:10px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.host-join-notice-title{
+  margin-top:3px;
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:24px;
+  line-height:1;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.host-join-notice-text{
+  margin-top:3px;
+  color:#d7f7e5;
+  -webkit-text-fill-color:#d7f7e5;
+  font-size:12px;
+  font-weight:850;
+  line-height:1.35;
+}
+.host-join-notice button{
+  flex:0 0 auto;
+  min-width:78px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.25);
+  background:linear-gradient(180deg,#ffffff,#cbd5e1);
+  color:#101827;
+  -webkit-text-fill-color:#101827;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 8px 16px rgba(0,0,0,.24);
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:17px;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:10px 14px;
+  cursor:pointer;
+}
+@media(max-width:520px){
+  .host-join-notice{align-items:flex-start;flex-direction:column}
+  .host-join-notice button{width:100%}
+}
+.picks-collapsible-card .picks-card-toggle{
+  appearance:none;
+  -webkit-appearance:none;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  width:100%;
+  margin:0;
+  padding:0 0 9px;
+  border:0;
+  border-bottom:1px solid rgba(226,232,240,.16);
+  background:transparent;
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+  text-align:left;
+  cursor:pointer;
+}
+.picks-card-kicker{
+  display:block;
+  color:#f6d46b;
+  -webkit-text-fill-color:#f6d46b;
+  font-size:10px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.picks-card-title{
+  display:block;
+  margin-top:3px;
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:23px;
+  line-height:1;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  text-shadow:0 2px 9px rgba(0,0,0,.86);
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.picks-card-toggle-state{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:58px;
+  min-height:29px;
+  padding:0 10px;
+  border-radius:999px;
+  border:1px solid rgba(226,232,240,.24);
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(0,0,0,.34));
+  color:#dbe3ee;
+  -webkit-text-fill-color:#dbe3ee;
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:13px;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+.picks-collapsible-card.is-collapsed .picks-card-toggle{
+  padding-bottom:0;
+  border-bottom:0;
+}
+.picks-collapsible-card.is-collapsed .picks-card-toggle-state{
+  color:#f6d46b;
+  -webkit-text-fill-color:#f6d46b;
+}
+.current-pool-strip.picks-collapsible-card{
+  display:grid;
+  align-items:stretch;
+}
+.current-pool-strip.picks-collapsible-card .current-pool-main,
+.current-pool-strip.picks-collapsible-card .current-pool-strip-meta{
+  margin-top:10px;
+}
+.current-pool-strip.picks-collapsible-card.is-collapsed .current-pool-main,
+.current-pool-strip.picks-collapsible-card.is-collapsed .current-pool-strip-meta,
+.make-picks-intro.picks-collapsible-card.is-collapsed .make-picks-intro-body{
+  display:none!important;
+}
+#view-picks .picks-collapsible-card.is-collapsed > :not(.picks-card-toggle){
+  display:none!important;
+}
+.make-picks-intro.picks-collapsible-card{
+  display:grid;
+  gap:10px;
+}
+.make-picks-intro-body{
+  display:grid;
+  gap:7px;
+}
+.make-picks-intro-copy strong,
+.make-picks-steps strong{
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+}
+.make-picks-steps{
+  display:grid;
+  gap:8px;
+  margin:0;
+  padding:0;
+  list-style:none;
+  counter-reset:make-picks-step;
+}
+.make-picks-steps li{
+  counter-increment:make-picks-step;
+  position:relative;
+  min-height:30px;
+  padding:6px 0 6px 42px;
+  color:#dbe3ee;
+  -webkit-text-fill-color:#dbe3ee;
+  font-size:13px;
+  font-weight:850;
+  line-height:1.32;
+}
+.make-picks-steps li::before{
+  content:counter(make-picks-step);
+  position:absolute;
+  left:0;
+  top:3px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  border-radius:999px;
+  border:1px solid rgba(246,212,107,.52);
+  background:linear-gradient(180deg,#f6d46b,#b87812);
+  color:#111827;
+  -webkit-text-fill-color:#111827;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 12px rgba(0,0,0,.22);
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:16px;
+  font-weight:950;
+  line-height:1;
+}
+body:not(.embedded-readonly-preview) #view-picks.active{
+  padding-top:34px !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .current-pool-strip.picks-collapsible-card,
+body:not(.embedded-readonly-preview) #view-picks .make-picks-intro.picks-collapsible-card{
+  width:min(100%,760px) !important;
+  max-width:760px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  box-sizing:border-box !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .current-pool-strip.picks-collapsible-card{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:0 !important;
+  align-items:stretch !important;
+  padding:14px 16px !important;
+  margin-top:0 !important;
+  margin-bottom:20px !important;
+  border-radius:16px !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .make-picks-intro.picks-collapsible-card{
+  margin-bottom:20px !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .current-pool-strip.picks-collapsible-card .current-pool-main,
+body:not(.embedded-readonly-preview) #view-picks .current-pool-strip.picks-collapsible-card .current-pool-strip-meta{
+  width:100% !important;
+  margin:12px 0 0 !important;
+  text-align:center !important;
+  justify-content:center !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .current-pool-strip.picks-collapsible-card .current-pool-strip-meta{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:7px !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .current-pool-strip.picks-collapsible-card .current-pool-actions{
+  justify-content:center !important;
+  margin-top:2px !important;
+}
+body:not(.embedded-readonly-preview) #view-picks .picks-collapsible-card.is-collapsed > :not(.picks-card-toggle){
+  display:none!important;
+}
+@media(min-width:761px){
+  body.pool-experience-active:not(.god-mode) .view{
+    margin-top:60px !important;
+  }
+  body:not(.embedded-readonly-preview) #view-picks.active{
+    padding-top:8px !important;
+  }
+}
+@media(max-width:560px){
+  .picks-card-title{font-size:20px}
+  .picks-card-toggle-state{min-width:54px;min-height:27px;font-size:12px}
+  .make-picks-steps{gap:6px}
+  .make-picks-steps li{font-size:12px;line-height:1.25;padding-left:38px}
+  .make-picks-steps li::before{width:26px;height:26px;font-size:15px}
+}
 .admin-key-msg{
   min-height:18px;
   margin-top:8px;
@@ -4754,6 +5054,7 @@ body.god-mode .god-mode-view{
 .scoring-live-title{font-family:"Bebas Neue",Impact,sans-serif;color:#f6d46b;font-size:20px;letter-spacing:.055em;line-height:1;text-transform:uppercase;margin-bottom:7px}
 .scoring-live-list{display:grid;gap:6px;color:#e5e7eb;font-size:12px;line-height:1.4}
 .scoring-live-fights{display:grid;gap:10px}
+.scoring-explain-example{margin-top:7px;padding:8px 9px;border-radius:10px;border:1px solid rgba(246,212,107,.22);background:linear-gradient(180deg,rgba(246,212,107,.10),rgba(0,0,0,.20));color:#f6d46b;-webkit-text-fill-color:#f6d46b;font-size:11px;line-height:1.35;font-weight:900}
 .scoring-fight-row{border:1px solid rgba(255,255,255,.10);border-radius:12px;background:rgba(255,255,255,.035);padding:12px}
 .scoring-fight-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
 .scoring-fight-name{font-family:"Bebas Neue",Impact,sans-serif;color:#fff;font-size:20px;letter-spacing:.055em;line-height:1;text-transform:uppercase}
@@ -6075,6 +6376,7 @@ textarea:focus,
 .email-verify-card.show{display:block}
 .email-verify-title{color:#f6d46b;font-size:13px;font-weight:950;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
 .email-verify-card p{margin:0;color:#e5e7eb;font-size:13px;line-height:1.42}
+.verify-spam-warning{display:block;color:#fc8181!important;-webkit-text-fill-color:#fc8181!important;font-weight:950;text-transform:uppercase;letter-spacing:.045em;margin:5px 0}
 .email-verify-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .email-verify-actions button{border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-weight:950;text-transform:uppercase;padding:10px 12px;cursor:pointer}
 #view-pool{max-width:760px}
@@ -6733,6 +7035,12 @@ body.landing-route-active:not(.app-profile-locked) .view.active{
   font-size:13px !important;
   font-weight:900 !important;
   line-height:1.35 !important;
+}
+#view-picks #submitMsg.submit-msg-error:not(:empty){
+  border-color:rgba(255,118,118,.58) !important;
+  background:rgba(168,58,61,.18) !important;
+  color:#ffd1d1 !important;
+  -webkit-text-fill-color:#ffd1d1 !important;
 }
 @media(max-width:820px){
   #view-picks{
@@ -10428,6 +10736,9 @@ html:has(body.embedded-readonly-preview){
   background:linear-gradient(180deg,rgba(27,30,36,.88),rgba(7,8,10,.94));
   box-shadow:0 18px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12);
 }
+.setup-body.onboarding-join:not(.account-ready) #setupPathPanel{
+  display:none!important;
+}
 .setup-body.onboarding-join #setupPathPanel .setup-panel-title{
   color:#fff;
   -webkit-text-fill-color:#fff;
@@ -10497,6 +10808,9 @@ html:has(body.embedded-readonly-preview){
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 20px rgba(0,0,0,.22)!important;
   }
   .setup-body.onboarding-join #setupPathPanel{
+    order:1!important;
+  }
+  .setup-body.onboarding-join:not(.account-ready) > .setup-panel:not(#setupPathPanel){
     order:1!important;
   }
   .setup-body.onboarding-join > .setup-panel:not(#setupPathPanel){
@@ -10883,7 +11197,10 @@ html:has(body.embedded-readonly-preview){
 }
 .setup-body.account-ready #createAccountMode,
 .setup-body.account-ready #signInMode,
-.setup-body.account-ready .auth-note{
+.setup-body.account-ready .auth-note,
+.setup-body.signed-in-unverified #createAccountMode,
+.setup-body.signed-in-unverified #signInMode,
+.setup-body.signed-in-unverified .auth-note{
   display:none!important;
 }
 .setup-body.account-ready > .setup-panel:first-of-type{
@@ -10997,6 +11314,145 @@ html:has(body.embedded-readonly-preview){
   -webkit-backdrop-filter:blur(10px);
 }
 .policy-modal.show{display:flex}
+.feedback-fab{
+  position:relative;
+  grid-column:1 / -1;
+  justify-self:center;
+  width:max-content;
+  max-width:100%;
+  margin:2px auto 0;
+  min-height:42px;
+  padding:9px 22px;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:999px;
+  background:linear-gradient(180deg,#b83238,#6b1d27);
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+  box-shadow:0 12px 28px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.18);
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:18px;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.feedback-modal{
+  position:fixed;
+  inset:0;
+  z-index:10020;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.74);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.feedback-modal.show{display:flex}
+.feedback-dialog{
+  width:min(100%,520px);
+  border:1px solid rgba(246,212,107,.36);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(24,24,24,.98),rgba(7,7,9,.98));
+  box-shadow:0 28px 80px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,255,255,.10);
+  padding:20px;
+}
+.feedback-close{
+  float:right;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  color:#f8fafc;
+  padding:8px 11px;
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:16px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.feedback-kicker{
+  color:#f6d46b;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.feedback-dialog h2{
+  margin:6px 0 8px;
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:38px;
+  line-height:.95;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  color:#fff;
+}
+.feedback-copy{
+  margin:0 0 14px;
+  color:#dbe3ee;
+  font-size:13px;
+  line-height:1.45;
+  font-weight:800;
+}
+.feedback-form{
+  display:grid;
+  gap:12px;
+  clear:both;
+}
+.feedback-form label{
+  display:grid;
+  gap:6px;
+  color:#b8c0cc;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.feedback-form input,
+.feedback-form textarea{
+  width:100%;
+  border:1px solid rgba(205,214,224,.30);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(31,35,42,.96),rgba(10,11,14,.98));
+  color:#f8fafc;
+  -webkit-text-fill-color:#f8fafc;
+  font:800 14px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  letter-spacing:0;
+  text-transform:none;
+  padding:12px;
+  outline:none;
+}
+.feedback-form textarea{resize:vertical;min-height:122px}
+.feedback-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.feedback-actions button{
+  min-height:42px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.07);
+  color:#f8fafc;
+  font-family:"Bebas Neue",Impact,sans-serif;
+  font-size:18px;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.feedback-actions button.primary{
+  border-color:rgba(246,212,107,.58);
+  background:linear-gradient(180deg,#b83238,#6b1d27);
+  color:#fff;
+  box-shadow:0 10px 22px rgba(116,16,26,.28);
+}
+.feedback-status{
+  min-height:18px;
+  color:#f6d46b;
+  font-size:12px;
+  line-height:1.35;
+  font-weight:900;
+}
+.feedback-status.bad{color:#fc8181}
+.feedback-status.good{color:#68d391}
 .policy-dialog{
   width:min(100%,720px);
   max-height:min(86vh,760px);
@@ -11061,6 +11517,15 @@ html:has(body.embedded-readonly-preview){
   cursor:pointer;
 }
 @media(max-width:560px){
+  .feedback-fab{
+    margin-top:6px;
+    min-height:38px;
+    padding:8px 18px;
+    font-size:16px;
+  }
+  .feedback-dialog{padding:17px}
+  .feedback-dialog h2{font-size:32px}
+  .feedback-actions{grid-template-columns:1fr}
   .policy-dialog{padding:17px}
   .policy-dialog h2{font-size:32px}
 }
@@ -15889,6 +16354,54 @@ body:not(.app-profile-locked):not(.god-mode) .view{
 .mobile-pool-nav-current{
   display:none;
 }
+.pool-nav-helper{
+  display:none;
+}
+.phone-main-chat,
+.phone-secondary-stats{
+  display:none!important;
+}
+@media(min-width:761px){
+  body:not(.app-profile-locked):not(.god-mode) .view{
+    margin-top:52px;
+  }
+  body:not(.embedded-readonly-preview) #view-picks.active{
+    padding-top:8px !important;
+  }
+  body:not(.embedded-readonly-preview) .pool-nav-helper{
+    display:none !important;
+  }
+}
+@media(min-width:641px) and (max-width:900px){
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools{
+    width:min(94vw,760px) !important;
+    margin:8px auto 24px !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    gap:22px !important;
+    align-items:start !important;
+    z-index:3 !important;
+  }
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools-left,
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools-right{
+    grid-column:auto !important;
+    transform:none !important;
+  }
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools-group{
+    justify-content:space-between !important;
+    gap:8px !important;
+  }
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools .tab{
+    padding:7px 5px !important;
+    min-height:30px !important;
+    font-size:13px !important;
+    letter-spacing:.035em !important;
+    white-space:nowrap !important;
+  }
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools .tab > .tab-label,
+  html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .belt-tools .tab span:first-child{
+    transform:skewX(-7deg) !important;
+  }
+}
 .stats-home-card{
   padding:18px !important;
   background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.56)) !important;
@@ -17694,8 +18207,10 @@ body.embedded-readonly-preview::before{
   display:none;
 }
 html.local-device-preview-ready .device-preview-switcher{
-  position:sticky;
+  position:fixed;
   top:0;
+  left:0;
+  right:0;
   z-index:100000;
   display:flex;
   align-items:center;
@@ -17707,6 +18222,13 @@ html.local-device-preview-ready .device-preview-switcher{
   background:linear-gradient(180deg,rgba(17,17,17,.98),rgba(5,5,5,.96));
   border-bottom:1px solid rgba(255,255,255,.12);
   box-shadow:0 10px 24px rgba(0,0,0,.32);
+}
+html.local-device-preview-ready:not(.local-device-preview-active) body{
+  padding-top:44px!important;
+}
+html.local-device-preview-ready:not(.local-device-preview-active) .landing-nav,
+html.local-device-preview-ready:not(.local-device-preview-active) .tabs{
+  top:44px!important;
 }
 .device-preview-switcher button{
   appearance:none;
@@ -17737,25 +18259,42 @@ html.local-device-preview-active{
 html.local-device-preview-active body{
   background:#15181d!important;
   min-height:100vh;
-  overflow-x:auto;
+  overflow:hidden!important;
+}
+html.local-device-preview-active body::before,
+html.local-device-preview-active body::after{
+  content:none!important;
+  display:none!important;
+  opacity:0!important;
+  background:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
 }
 html.local-device-preview-active body > :not(.device-preview-switcher):not(.device-preview-stage){
   display:none!important;
 }
 html.local-device-preview-active .device-preview-stage{
+  position:fixed;
+  top:44px;
+  right:0;
+  bottom:0;
+  left:0;
+  z-index:99999;
   display:flex;
   justify-content:center;
   align-items:flex-start;
   width:100%;
-  min-height:calc(100vh - 44px);
-  padding:22px 12px 36px;
+  min-height:0;
+  padding:14px 12px 26px;
+  overflow:hidden;
   background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.10),transparent 34%),#15181d;
 }
 .device-preview-frame-shell{
   width:var(--local-device-preview-width);
   max-width:100%;
   height:var(--local-device-preview-height);
-  max-height:calc(100vh - 94px);
+  max-height:calc(100vh - 84px);
   overflow:hidden;
   overscroll-behavior:contain;
   touch-action:pan-y;
@@ -17862,6 +18401,14 @@ html.local-device-preview-active .device-preview-stage{
   body:not(.embedded-readonly-preview) .belt-main-tab.make-picks{
     grid-column:1/-1 !important;
   }
+  body:not(.embedded-readonly-preview) .belt-main-tab.stats,
+  body:not(.embedded-readonly-preview) #chatTabBtn{
+    display:none !important;
+  }
+  body:not(.embedded-readonly-preview) .phone-main-chat,
+  body:not(.embedded-readonly-preview) .phone-secondary-stats{
+    display:flex !important;
+  }
   body:not(.embedded-readonly-preview) .belt-main-tab.active,
   body:not(.embedded-readonly-preview) .belt-main-tab.tab.active{
     border-color:rgba(255,255,255,.74) !important;
@@ -17891,7 +18438,7 @@ html.local-device-preview-active .device-preview-stage{
   }
   body:not(.embedded-readonly-preview) .belt-tools{
     display:grid !important;
-    grid-template-columns:1fr !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
     gap:6px !important;
     width:100% !important;
     max-width:100% !important;
@@ -17901,16 +18448,12 @@ html.local-device-preview-active .device-preview-stage{
   }
   body:not(.embedded-readonly-preview) .belt-tools-left,
   body:not(.embedded-readonly-preview) .belt-tools-right{
+    display:contents !important;
     grid-column:auto !important;
     transform:none !important;
   }
   body:not(.embedded-readonly-preview) .belt-tools-group{
-    display:grid !important;
-    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-    gap:6px !important;
-    width:100% !important;
-    max-width:100% !important;
-    justify-content:stretch !important;
+    display:contents !important;
   }
   body:not(.embedded-readonly-preview) .belt-tools .tab{
     display:flex !important;
@@ -17933,10 +18476,30 @@ html.local-device-preview-active .device-preview-stage{
     white-space:normal !important;
   }
   body:not(.embedded-readonly-preview) .belt-tools .tab.active{
-    border-color:rgba(255,255,255,.58) !important;
-    background:linear-gradient(180deg,rgba(168,58,61,.84),rgba(95,29,36,.88)) !important;
+    border:2px solid rgba(255,255,255,.92) !important;
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.50)),#07090d !important;
+    color:#cbd5e1 !important;
+    -webkit-text-fill-color:#cbd5e1 !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(239,68,68,.18) !important;
+  }
+  body:not(.embedded-readonly-preview) .belt-main-tab.make-picks,
+  body:not(.embedded-readonly-preview) .belt-main-tab.leaderboard,
+  body:not(.embedded-readonly-preview) .belt-main-tab.my-picks,
+  body:not(.embedded-readonly-preview) .belt-main-tab.all-picks,
+  body:not(.embedded-readonly-preview) .belt-main-tab.phone-main-chat{
+    border-color:transparent !important;
+    background:linear-gradient(180deg,rgba(168,58,61,.98),rgba(95,29,36,.98)) !important;
     color:#fff !important;
     -webkit-text-fill-color:#fff !important;
+    box-shadow:none !important;
+  }
+  body:not(.embedded-readonly-preview) .belt-main-tab.make-picks.active,
+  body:not(.embedded-readonly-preview) .belt-main-tab.leaderboard.active,
+  body:not(.embedded-readonly-preview) .belt-main-tab.my-picks.active,
+  body:not(.embedded-readonly-preview) .belt-main-tab.all-picks.active,
+  body:not(.embedded-readonly-preview) .belt-main-tab.phone-main-chat.active{
+    border:2px solid rgba(255,255,255,.92) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(239,68,68,.18) !important;
   }
 	  body:not(.embedded-readonly-preview) .chat-notif-badge{
 	    display:none !important;
@@ -17968,6 +18531,21 @@ html.local-device-preview-active .device-preview-stage{
 	  body:not(.embedded-readonly-preview) .mobile-pool-nav-current{
 	    display:none !important;
 	  }
+	  body:not(.embedded-readonly-preview) .pool-nav-helper{
+	    display:block !important;
+	    margin:8px auto 0 !important;
+	    width:100% !important;
+	    color:#f4cf66 !important;
+	    -webkit-text-fill-color:#f4cf66 !important;
+	    font-family:"Bebas Neue",Impact,sans-serif !important;
+	    font-size:12px !important;
+	    line-height:1 !important;
+	    letter-spacing:.16em !important;
+	    text-align:center !important;
+	    text-transform:uppercase !important;
+	    opacity:.82 !important;
+	    pointer-events:none !important;
+	  }
 	  body:not(.embedded-readonly-preview) .belt-tabs{
 	    padding-bottom:44px !important;
 	  }
@@ -17978,7 +18556,8 @@ html.local-device-preview-active .device-preview-stage{
 	    align-items:center !important;
 	  }
 	  body.mobile-pool-nav-collapsed:not(.embedded-readonly-preview) .belt-tabs-stage,
-	  body.mobile-pool-nav-collapsed:not(.embedded-readonly-preview) .belt-tools{
+	  body.mobile-pool-nav-collapsed:not(.embedded-readonly-preview) .belt-tools,
+	  body.mobile-pool-nav-collapsed:not(.embedded-readonly-preview) .pool-nav-helper{
 	    display:none !important;
 	  }
 	  body.mobile-pool-nav-collapsed:not(.embedded-readonly-preview) .mobile-pool-nav-current{
@@ -18029,6 +18608,21 @@ html.local-device-preview-active .device-preview-stage{
 	  body.embedded-readonly-preview.phone-design-preview .mobile-pool-nav-current{
 	    display:none !important;
 	  }
+	  body.embedded-readonly-preview.phone-design-preview .pool-nav-helper{
+	    display:block !important;
+	    margin:8px auto 0 !important;
+	    width:100% !important;
+	    color:#f4cf66 !important;
+	    -webkit-text-fill-color:#f4cf66 !important;
+	    font-family:"Bebas Neue",Impact,sans-serif !important;
+	    font-size:12px !important;
+	    line-height:1 !important;
+	    letter-spacing:.16em !important;
+	    text-align:center !important;
+	    text-transform:uppercase !important;
+	    opacity:.82 !important;
+	    pointer-events:none !important;
+	  }
 	  body.embedded-readonly-preview.phone-design-preview .belt-tabs{
 	    padding-bottom:44px !important;
 	  }
@@ -18039,7 +18633,8 @@ html.local-device-preview-active .device-preview-stage{
 	    align-items:center !important;
 	  }
 	  body.embedded-readonly-preview.phone-design-preview.mobile-pool-nav-collapsed .belt-tabs-stage,
-	  body.embedded-readonly-preview.phone-design-preview.mobile-pool-nav-collapsed .belt-tools{
+	  body.embedded-readonly-preview.phone-design-preview.mobile-pool-nav-collapsed .belt-tools,
+	  body.embedded-readonly-preview.phone-design-preview.mobile-pool-nav-collapsed .pool-nav-helper{
 	    display:none !important;
 	  }
 	  body.embedded-readonly-preview.phone-design-preview.mobile-pool-nav-collapsed .mobile-pool-nav-current{
@@ -18672,7 +19267,8 @@ html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-r
   cursor:pointer!important;
 }
 html.local-device-phone-frame body:not(.embedded-readonly-preview) .belt-tabs-stage,
-html.local-device-phone-frame body:not(.embedded-readonly-preview) .belt-tools{
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .belt-tools,
+html.local-device-phone-frame body:not(.embedded-readonly-preview) .pool-nav-helper{
   display:none!important;
 }
 html.local-device-phone-frame body:not(.embedded-readonly-preview) .mobile-pool-nav-current{
@@ -18708,11 +19304,66 @@ html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-r
 }
 html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools{
   display:grid!important;
-  grid-template-columns:1fr!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
   width:100%!important;
   max-width:100%!important;
   margin:8px 0 0!important;
   gap:6px!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools-group,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools-left,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools-right{
+  display:contents!important;
+  transform:none!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.stats,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) #chatTabBtn{
+  display:none!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .phone-main-chat,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .phone-secondary-stats{
+  display:flex!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-tools .tab.active{
+  border:2px solid rgba(255,255,255,.92)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.50)),#07090d!important;
+  color:#cbd5e1!important;
+  -webkit-text-fill-color:#cbd5e1!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(239,68,68,.18)!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.make-picks,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.leaderboard,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.my-picks,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.all-picks,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.phone-main-chat{
+  border-color:transparent!important;
+  background:linear-gradient(180deg,rgba(168,58,61,.98),rgba(95,29,36,.98))!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  box-shadow:none!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.make-picks.active,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.leaderboard.active,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.my-picks.active,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.all-picks.active,
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .belt-main-tab.phone-main-chat.active{
+  border:2px solid rgba(255,255,255,.92)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(239,68,68,.18)!important;
+}
+html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .pool-nav-helper{
+  display:block!important;
+  margin:8px auto 0!important;
+  width:100%!important;
+  color:#f4cf66!important;
+  -webkit-text-fill-color:#f4cf66!important;
+  font-family:"Bebas Neue",Impact,sans-serif!important;
+  font-size:12px!important;
+  line-height:1!important;
+  letter-spacing:.16em!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+  opacity:.82!important;
+  pointer-events:none!important;
 }
 html.local-device-phone-frame:not(.local-device-home-frame) body:not(.embedded-readonly-preview):not(.mobile-pool-nav-collapsed) .mobile-pool-nav-current{
   display:none!important;
@@ -19058,4 +19709,237 @@ body:not(.embedded-readonly-preview) #view-picks .fight-card.fight-m2.title::aft
   display:none!important;
   background:none!important;
   background-image:none!important;
+}
+
+/* Final launch guard: selected fighter text must stay readable on dark cards. */
+.fighter-btn.sel-fav,
+.fighter-btn.sel-dog,
+.fighter-btn.sel-big,
+.fight-card .fighter-btn.sel-fav,
+.fight-card .fighter-btn.sel-dog,
+.fight-card .fighter-btn.sel-big,
+#view-picks .fighter-btn.sel-fav,
+#view-picks .fighter-btn.sel-dog,
+#view-picks .fighter-btn.sel-big,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-fav,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-dog,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-big,
+.preview-real .fighter-btn.sel-fav,
+.preview-real .fighter-btn.sel-dog,
+.preview-real .fighter-btn.sel-big{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.92)!important;
+}
+.fighter-btn.sel-fav .fighter-name,
+.fighter-btn.sel-dog .fighter-name,
+.fighter-btn.sel-big .fighter-name,
+.fighter-btn.sel-fav .fighter-record,
+.fighter-btn.sel-dog .fighter-record,
+.fighter-btn.sel-big .fighter-record,
+.fighter-btn.sel-fav .fighter-odds,
+.fighter-btn.sel-dog .fighter-odds,
+.fighter-btn.sel-big .fighter-odds,
+#view-picks .fighter-btn.sel-fav .fighter-name,
+#view-picks .fighter-btn.sel-dog .fighter-name,
+#view-picks .fighter-btn.sel-big .fighter-name,
+#view-picks .fighter-btn.sel-fav .fighter-record,
+#view-picks .fighter-btn.sel-dog .fighter-record,
+#view-picks .fighter-btn.sel-big .fighter-record,
+#view-picks .fighter-btn.sel-fav .fighter-odds,
+#view-picks .fighter-btn.sel-dog .fighter-odds,
+#view-picks .fighter-btn.sel-big .fighter-odds,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-fav .fighter-name,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-dog .fighter-name,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-big .fighter-name,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-fav .fighter-record,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-dog .fighter-record,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-big .fighter-record,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-fav .fighter-odds,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-dog .fighter-odds,
+#myInlineEditor.make-picks-clone .fighter-btn.sel-big .fighter-odds,
+.preview-real .fighter-btn.sel-fav .fighter-name,
+.preview-real .fighter-btn.sel-dog .fighter-name,
+.preview-real .fighter-btn.sel-big .fighter-name,
+.preview-real .fighter-btn.sel-fav .fighter-record,
+.preview-real .fighter-btn.sel-dog .fighter-record,
+.preview-real .fighter-btn.sel-big .fighter-record,
+.preview-real .fighter-btn.sel-fav .fighter-odds,
+.preview-real .fighter-btn.sel-dog .fighter-odds,
+.preview-real .fighter-btn.sel-big .fighter-odds{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.92)!important;
+}
+
+/* Local device preview guard: phone/iPad frames must never inherit a dimmed pool state. */
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview),
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .tabs,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .pool-shell,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .view.active,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fight-card,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fighter-btn,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .prop-btn,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .lock-card,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fastest-tie-card{
+  opacity:1!important;
+  filter:none!important;
+  mix-blend-mode:normal!important;
+}
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fight-card,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .lock-card,
+html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fastest-tie-card{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+
+/* Local device switcher only: keep the embedded phone/tablet preview natural and below the toolbar. */
+html.local-device-preview-active.local-device-preview-iphone15 .device-preview-stage,
+html.local-device-preview-active.local-device-preview-iphonese .device-preview-stage,
+html.local-device-preview-active.local-device-preview-ipad .device-preview-stage{
+  padding-top:14px!important;
+}
+html.local-device-preview-active.local-device-preview-iphone15 .device-preview-frame,
+html.local-device-preview-active.local-device-preview-iphonese .device-preview-frame,
+html.local-device-preview-active.local-device-preview-ipad .device-preview-frame{
+  filter:none!important;
+}
+
+/* All Picks score history: visible only after a fight has results. */
+#allPicksContent .ap-row .ap-score:not(.ap-score-pending){
+  display:grid!important;
+  gap:3px!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:220px!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:5px 0 0!important;
+  padding:0!important;
+  overflow:visible!important;
+  transform:none!important;
+  pointer-events:auto!important;
+  z-index:4!important;
+  color:#f6d46b!important;
+  -webkit-text-fill-color:#f6d46b!important;
+  font-family:"Bebas Neue",Impact,sans-serif!important;
+  text-transform:uppercase!important;
+  letter-spacing:.045em!important;
+  line-height:1.05!important;
+  text-shadow:0 2px 7px rgba(0,0,0,.9)!important;
+}
+#allPicksContent .ap-row .ap-score-pending{
+  display:none!important;
+}
+#allPicksContent .ap-row .ap-score-breakdown{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  max-width:220px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  overflow-wrap:anywhere!important;
+  color:#f6d46b!important;
+  -webkit-text-fill-color:#f6d46b!important;
+  font-size:12px!important;
+  line-height:1.08!important;
+  font-weight:950!important;
+}
+
+/* Final scoring bubble colors: 1pt and 2pt stay black, 3pt stays red, lock stays gold. */
+.pts-fav,
+.pts-dog,
+.fighter-pts.pts-fav,
+.fighter-pts.pts-dog,
+.fighter-btn.sel-fav .fighter-pts,
+.fighter-btn.sel-dog .fighter-pts,
+.fight-card .fighter-btn.sel-fav .fighter-pts,
+.fight-card .fighter-btn.sel-dog .fighter-pts,
+#view-picks .fighter-pts.pts-fav,
+#view-picks .fighter-pts.pts-dog,
+#view-picks .fighter-btn.sel-fav .fighter-pts,
+#view-picks .fighter-btn.sel-dog .fighter-pts,
+.preview-real .fighter-pts.pts-fav,
+.preview-real .fighter-pts.pts-dog,
+.preview-real .fighter-btn.sel-fav .fighter-pts,
+.preview-real .fighter-btn.sel-dog .fighter-pts,
+.setup-preview .preview-real .fighter-pts.pts-fav,
+.setup-preview .preview-real .fighter-pts.pts-dog,
+.setup-preview .preview-real .fighter-btn.sel-fav .fighter-pts,
+.setup-preview .preview-real .fighter-btn.sel-dog .fighter-pts,
+.prop-value-1 .prop-pts,
+.prop-value-2 .prop-pts,
+.prop-btn.active.prop-value-1 .prop-pts,
+.prop-btn.active.prop-value-2 .prop-pts,
+.fight-card .prop-value-1 .prop-pts,
+.fight-card .prop-value-2 .prop-pts,
+#view-picks .prop-value-1 .prop-pts,
+#view-picks .prop-value-2 .prop-pts,
+#view-picks .prop-btn.active.prop-value-1 .prop-pts,
+#view-picks .prop-btn.active.prop-value-2 .prop-pts,
+#view-picks .scoring-key-pill.fav,
+#view-picks .scoring-key-pill.dog,
+body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.fav,
+body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.dog,
+body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-fav,
+body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-dog,
+body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-fav,
+body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-dog,
+body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-1 .prop-pts,
+body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-2 .prop-pts,
+body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-1 .prop-pts,
+body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-2 .prop-pts{
+  background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;
+  background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;
+  background-color:transparent!important;
+  border:1px solid rgba(226,232,240,.34)!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 2px 7px rgba(0,0,0,.86)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important;
+}
+.pts-big,
+.fighter-pts.pts-big,
+.fighter-btn.sel-big .fighter-pts,
+.fight-card .fighter-btn.sel-big .fighter-pts,
+#view-picks .fighter-pts.pts-big,
+#view-picks .fighter-btn.sel-big .fighter-pts,
+.prop-value-3 .prop-pts,
+.prop-btn.active.prop-value-3 .prop-pts,
+.fight-card .prop-value-3 .prop-pts,
+#view-picks .prop-value-3 .prop-pts,
+#view-picks .prop-btn.active.prop-value-3 .prop-pts,
+#view-picks .scoring-key-pill.big,
+body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.big,
+body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-big,
+body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-big,
+body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-3 .prop-pts,
+body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-3 .prop-pts{
+  background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;
+  background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;
+  background-color:transparent!important;
+  border:1px solid rgba(255,118,118,.62)!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 2px 7px rgba(0,0,0,.86)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important;
+}
+
+/* Phone pool navigation: only the current red tab gets the white selection border. */
+body.embedded-readonly-preview.phone-preview-compact .belt-main-tab,
+body.embedded-readonly-preview.phone-design-preview .belt-main-tab{
+  border-color:transparent!important;
+  outline:none!important;
+  box-shadow:none!important;
+}
+body.embedded-readonly-preview.phone-preview-compact .belt-main-tab.active,
+body.embedded-readonly-preview.phone-design-preview .belt-main-tab.active{
+  border:2px solid rgba(255,255,255,.92)!important;
+  outline:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(239,68,68,.18)!important;
 }

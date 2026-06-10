@@ -41,6 +41,18 @@
     return typeof global.isLocked === "function" ? global.isLocked() : false;
   }
 
+  function casualPreviewEnabled() {
+    try { return new URLSearchParams(global.location && global.location.search || "").get("casualPreview") === "1"; } catch (e) { return false; }
+  }
+
+  function fightHasResult(result) {
+    return !!(result && (result.winner || result.method || result.timing || result.overUnderResult || result.status || result.resultStatus));
+  }
+
+  function casualStampEnabled() {
+    return casualPreviewEnabled() || fights().some(function (fight) { return fightHasResult(results()[fight.id]); });
+  }
+
   function isFreeStarterPool() {
     return typeof global.isFreeStarterPool === "function" ? global.isFreeStarterPool() : false;
   }
@@ -374,21 +386,25 @@
     var championId = championRow ? entryIdentity(championRow.e) : "";
     var lastScore = null;
     var currentRank = 0;
-    el.innerHTML = scored.map(function (x) {
+    var showCasualStamp = casualStampEnabled() && scored.length > 1;
+    var lowestScore = scored.length ? scored[scored.length - 1].sc : null;
+    el.innerHTML = scored.map(function (x, index) {
       var e = x.e;
       if (x.sc !== lastScore) {
         currentRank++;
         lastScore = x.sc;
       }
       var isLeader = championId && entryIdentity(e) === championId;
+      var isCasualLast = showCasualStamp && x.sc === lowestScore;
       var tiedCount = scored.filter(function (y) { return y.sc === x.sc; }).length;
       var rankLabel = (tiedCount > 1 ? "T-" + currentRank : currentRank) + ". ";
       var fighterCorrect = fights().filter(function (fight) {
         var result = results()[fight.id];
         return result && result.winner && e.picks && e.picks[fight.id] === result.winner;
       }).length;
-      var leaderMain = '<div class="lb-top"><div><div class="lb-name">' + rankLabel + esc(e.name || "") + '</div><div class="lb-sub">' + fighterCorrect + " / " + fights().length + ' Fights Correct</div></div><div class="lb-pts">' + x.sc + " PT</div></div>";
-      return '<div class="lb-entry' + (isLeader ? " leader" : "") + '">' + leaderMain + "</div>";
+      var casualStamp = isCasualLast ? '<div class="lb-casual-stamp" aria-label="Casual stamp">Casual</div>' : "";
+      var leaderMain = '<div class="lb-top"><div><div class="lb-name">' + rankLabel + esc(e.name || "") + '</div><div class="lb-sub">' + fighterCorrect + " / " + fights().length + ' Fights Correct</div></div>' + casualStamp + '<div class="lb-pts">' + x.sc + " PT</div></div>";
+      return '<div class="lb-entry' + (isLeader ? " leader" : "") + (isCasualLast ? " casual-preview-last" : "") + '">' + leaderMain + "</div>";
     }).join("");
     afterRenderLeaderboard();
     if (currentEntries.length && typeof global.renderAllPicks === "function" && !global.__allPicksRefreshFromLeaderboardQueued) {

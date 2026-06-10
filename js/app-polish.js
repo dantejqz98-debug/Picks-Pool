@@ -166,7 +166,7 @@
     var timings=props.timings||{}, overs=props.overs||{};
     var resolved=isResolved(result), hasWinner=!!(result&&result.winner), won=hasWinner&&side===parseInt(result.winner,10);
     scoreInfo=scoreInfo||null;
-    var scoreHtml=scoreInfo?'<div class="ap-score"><span class="ap-score-total">'+esc(scoreInfo.total)+'pt</span><span class="ap-score-breakdown">'+esc(scoreInfo.previous)+' before + '+esc(scoreInfo.gain)+' this fight = '+esc(scoreInfo.total)+' total</span></div>':'<div class="ap-score">'+esc(typeof entry.__fallbackScore==="number"&&!isNaN(entry.__fallbackScore)?entry.__fallbackScore+"pt":"0pt")+'</div>';
+    var scoreHtml=resolved&&scoreInfo?'<div class="ap-score"><span class="ap-score-breakdown">'+esc(scoreInfo.previous)+' PT before + '+esc(scoreInfo.gain)+' this fight = '+esc(scoreInfo.total)+' PT total</span></div>':(scoreInfo&&scoreInfo.hasProgress?'<div class="ap-score ap-score-current"><span class="ap-score-breakdown">'+esc(scoreInfo.total)+' PT total</span></div>':'<div class="ap-score ap-score-pending" aria-label="Score pending"></div>');
     var chips=[];
     var winnerState=resolved?(hasWinner?(won?"hit":"miss"):"void"):"pending";
     chips.push('<div class="ap-pick"><span class="ap-tag combined-pick" style="background:'+(winnerState==="hit"?"#1c4532":(winnerState==="miss"?"#742a2a":"#2d3748"))+';color:'+(winnerState==="hit"?"#68d391":(winnerState==="miss"?"#fc8181":"#f6d46b"))+'">'+(won?"✓ ":"")+esc(last(pickName))+'<span class="ap-tag-pts">'+(resolved?(won?"+"+winPts(fight,side)+"pt ✓":"0pt"):"+"+winPts(fight,side)+"pt")+'</span></span></div>');
@@ -259,28 +259,39 @@
     var ordered=entries.slice().sort(function(a,b){
       return (b.__fallbackScore||0)-(a.__fallbackScore||0)||String(a.name||"").localeCompare(String(b.name||""));
     });
-    var completedFlow=allPicksFightOrder().slice().reverse().filter(function(fight){return isResolved(results[fight.id]||{});});
-    function runningScore(entry,fight){
-      var total=0, gain=0, found=false;
-      completedFlow.forEach(function(doneFight){
-        var pts=fightPoints(entry,doneFight,results[doneFight.id]||{});
-        if(!found)total+=pts;
-        if(doneFight.id===fight.id){gain=pts;found=true;}
-      });
-      return {total:total,gain:gain,previous:total-gain,found:found};
+    var fightOrder=allPicksFightOrder();
+    var chronologicalOrder=fightOrder.slice().reverse();
+    function chronologicalFightIndex(fight){
+      for(var i=0;i<chronologicalOrder.length;i++){
+        if(chronologicalOrder[i]&&chronologicalOrder[i].id===fight.id)return i;
+      }
+      return -1;
     }
-    var html=tiebreakerHtml(ordered)+allPicksFightOrder().map(function(fight){
+    function runningScore(entry,fight){
+      var total=0, gain=0, targetIndex=chronologicalFightIndex(fight), hasProgress=false;
+      chronologicalOrder.forEach(function(doneFight,i){
+        if(targetIndex>=0&&i>targetIndex)return;
+        if(!isResolved(results[doneFight.id]||{}))return;
+        var pts=fightPoints(entry,doneFight,results[doneFight.id]||{});
+        if(doneFight.id===fight.id)gain=pts;
+        else hasProgress=true;
+        total+=pts;
+      });
+      return {total:total,gain:gain,previous:total-gain,hasProgress:hasProgress};
+    }
+    var html=tiebreakerHtml(ordered)+fightOrder.map(function(fight){
       var result=results[fight.id]||{};
       var f1=ordered.filter(function(e){return parseInt((e.picks||{})[fight.id],10)===1;}).length;
       var f2=ordered.filter(function(e){return parseInt((e.picks||{})[fight.id],10)===2;}).length;
       var resolved=isResolved(result);
       var rowData=ordered.map(function(entry,idx){
-        var score=resolved?runningScore(entry,fight):null;
+        var score=runningScore(entry,fight);
         return {entry:entry,index:idx,score:score};
       });
-      if(resolved)rowData.sort(function(a,b){return b.score.total-a.score.total||a.index-b.index;});
-      var leadScore=resolved&&rowData.length?rowData[0].score.total:null;
-      return '<div class="ap-block" id="fallback_apb_'+esc(fight.id)+'"><div class="ap-header" onclick="document.getElementById(\'fallback_apb_'+esc(fight.id)+'\').classList.toggle(\'open\')"><div><div class="ap-title">'+esc(last(fight.f1)+" vs "+last(fight.f2))+'</div><div class="ap-split">'+esc(last(fight.f1))+' '+f1+' · '+esc(last(fight.f2))+' '+f2+'</div></div><div style="display:flex;align-items:center;gap:8px">'+resultLabel(fight,result,ordered)+'<span class="ap-chevron">▼</span></div></div><div class="ap-body">'+rowData.map(function(row){return rowHtml(row.entry,fight,result,row.score).replace("ap-row plain-nameplate","ap-row "+(resolved&&row.score.total===leadScore?"all-picks-leader ":"")+"plain-nameplate");}).join("")+'</div></div>';
+      var sortByScore=resolved||rowData.some(function(row){return row.score&&row.score.hasProgress;});
+      if(sortByScore)rowData.sort(function(a,b){return b.score.total-a.score.total||a.index-b.index;});
+      var leadScore=sortByScore&&rowData.length?rowData[0].score.total:null;
+      return '<div class="ap-block" id="fallback_apb_'+esc(fight.id)+'"><div class="ap-header" onclick="document.getElementById(\'fallback_apb_'+esc(fight.id)+'\').classList.toggle(\'open\')"><div><div class="ap-title">'+esc(last(fight.f1)+" vs "+last(fight.f2))+'</div><div class="ap-split">'+esc(last(fight.f1))+' '+f1+' · '+esc(last(fight.f2))+' '+f2+'</div></div><div style="display:flex;align-items:center;gap:8px">'+resultLabel(fight,result,ordered)+'<span class="ap-chevron">▼</span></div></div><div class="ap-body">'+rowData.map(function(row){return rowHtml(row.entry,fight,result,row.score).replace("ap-row plain-nameplate","ap-row "+(sortByScore&&row.score.total===leadScore?"all-picks-leader ":"")+"plain-nameplate");}).join("")+'</div></div>';
     }).join("");
     el.innerHTML=html;
   }
@@ -439,6 +450,21 @@
   function rowScore(row){
     return parseScore(row.querySelector(".ap-score,.ap-score-total")&&row.querySelector(".ap-score,.ap-score-total").textContent);
   }
+  function fightGain(row){
+    var total=0, text=String(row&&row.textContent||""), re=/\+(\d+)\s*pt/gi, m;
+    while((m=re.exec(text)))total+=parseInt(m[1],10)||0;
+    return total;
+  }
+  function ensureScoreEl(row){
+    var scoreEl=row.querySelector(".ap-score");
+    if(scoreEl)return scoreEl;
+    var name=row.querySelector(".ap-name");
+    if(!name)return null;
+    scoreEl=document.createElement("div");
+    scoreEl.className="ap-score";
+    name.insertAdjacentElement("afterend",scoreEl);
+    return scoreEl;
+  }
   function scoreMapForBlock(block){
     var out={};
     [].slice.call(block.querySelectorAll(".ap-row")).forEach(function(row){out[playerName(row)]=rowScore(row);});
@@ -454,20 +480,50 @@
       body.appendChild(row);
     });
   }
+  function blockHasResult(block){
+    if(!block||block.id==="fallbackTiebreakerPicks"||block.id==="potentialTiebreakerPicks"||block.id==="allPicksLockPicks")return false;
+    var header=block.querySelector(".ap-header,.ap-header-fixed,summary,button")||block;
+    if(!header)return false;
+    var text=header.textContent||"";
+    return /result/i.test(text)&&!/pending/i.test(text);
+  }
   function polishAllPicksScores(){
     var blocks=[].slice.call(document.querySelectorAll("#allPicksContent .ap-block")).filter(function(block){return block.querySelector(".ap-row");});
     if(!blocks.length)return;
-    blocks.forEach(sortRows);
-    blocks.forEach(function(block,idx){
-      var previousScores=idx<blocks.length-1?scoreMapForBlock(blocks[idx+1]):{};
+    var runningByName={};
+    for(var idx=blocks.length-1;idx>=0;idx--){
+      var block=blocks[idx];
+      if(!blockHasResult(block)){
+        var hasProgress=Object.keys(runningByName).length>0;
+        [].slice.call(block.querySelectorAll(".ap-row")).forEach(function(row){
+          var scoreEl=ensureScoreEl(row);
+          if(!scoreEl)return;
+          if(!hasProgress){
+            scoreEl.classList.add("ap-score-pending");
+            scoreEl.classList.remove("ap-score-current");
+            scoreEl.innerHTML="";
+            return;
+          }
+          var current=runningByName[playerName(row)]||0;
+          scoreEl.classList.remove("ap-score-pending");
+          scoreEl.classList.add("ap-score-current");
+          scoreEl.innerHTML='<span class="ap-score-breakdown">'+current+' PT total</span>';
+        });
+        if(hasProgress)sortRows(block);
+        continue;
+      }
       [].slice.call(block.querySelectorAll(".ap-row")).forEach(function(row){
-        var scoreEl=row.querySelector(".ap-score");
-        if(!scoreEl||scoreEl.querySelector(".ap-score-breakdown"))return;
-        var total=rowScore(row), name=playerName(row), previous=Object.prototype.hasOwnProperty.call(previousScores,name)?previousScores[name]:0;
-        var gain=total-previous;
-        scoreEl.innerHTML='<span class="ap-score-total">'+total+'pt</span><span class="ap-score-breakdown">'+previous+' before + '+gain+' this fight = '+total+' total</span>';
+        var name=playerName(row);
+        if(!name)return;
+        var previous=runningByName[name]||0, gain=fightGain(row), total=previous+gain;
+        runningByName[name]=total;
+        var scoreEl=ensureScoreEl(row);
+        if(!scoreEl)return;
+        scoreEl.classList.remove("ap-score-pending");
+        scoreEl.innerHTML='<span class="ap-score-breakdown">'+previous+' PT before + '+gain+' this fight = '+total+' PT total</span>';
       });
-    });
+    }
+    blocks.forEach(sortRows);
   }
   ["click","hashchange"].forEach(function(evt){window.addEventListener(evt,function(){setTimeout(polishAllPicksScores,120);setTimeout(polishAllPicksScores,900);},true);});
   setTimeout(polishAllPicksScores,500);

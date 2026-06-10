@@ -363,6 +363,9 @@ async function resolveFreedom250CommunityPoolId(){
 }
 function getUrlPoolId(){
   var params=new URLSearchParams(window.location.search);
+  var hash=String(window.location.hash||"").replace(/^#/,"").toLowerCase();
+  var publicRoutes={home:1,"how-it-works":1,features:1,pricing:1,faq:1,"start-pool":1,login:1,"my-pools":1};
+  if(publicRoutes[hash])return "";
   return poolSlug(params.get("pool"));
 }
 function getPoolId(){
@@ -488,10 +491,32 @@ function landingRouteFromHash(){
 }
 function updateLandingRouteHash(route){
   if(!route)return;
-  var next=window.location.pathname+window.location.search+"#"+route;
+  var search=window.location.search;
+  if(route==="home"||route==="how-it-works"||route==="features"||route==="pricing"||route==="faq"||route==="start-pool"||route==="login"||route==="my-pools"){
+    try{
+      var params=new URLSearchParams(window.location.search);
+      ["pool","community","new","host"].forEach(function(key){params.delete(key);});
+      search=params.toString()?"?"+params.toString():"";
+    }catch(e){}
+  }
+  var next=window.location.pathname+search+"#"+route;
   if(window.location.pathname+window.location.search+window.location.hash!==next){
     try{history.replaceState(null,"",next);}catch(e){}
   }
+}
+function cleanPublicLandingRouteSearch(route){
+  if(!(route==="home"||route==="how-it-works"||route==="features"||route==="pricing"||route==="faq"||route==="start-pool"||route==="login"||route==="my-pools"))return;
+  try{
+    var url=new URL(window.location.href);
+    var changed=false;
+    ["pool","community","new","host"].forEach(function(key){
+      if(url.searchParams.has(key)){
+        url.searchParams.delete(key);
+        changed=true;
+      }
+    });
+    if(changed)history.replaceState(null,"",url.toString());
+  }catch(e){}
 }
 function releaseLocalDeviceHomeRoute(){
   try{
@@ -520,6 +545,12 @@ function finishStalePoolBoot(){
     var hash=String(location.hash||"").replace(/^#/,"").toLowerCase();
     var poolTabs={picks:1,leaderboard:1,mine:1,allpicks:1,stats:1,scoring:1,nextevent:1,chat:1,pool:1,admin:1,profile:1};
     if(!params.get("pool")||!poolTabs[hash])return;
+    if(typeof userHasCurrentPoolAccess==="function"&&!userHasCurrentPoolAccess()){
+      if(typeof showLandingOnboarding==="function")showLandingOnboarding("join",{preserveHash:false,scroll:false});
+      if(typeof setSetupMessage==="function")setSetupMessage("Create an account or sign in first, then join this pool.");
+      if(typeof setMemberMessage==="function")setMemberMessage("Create an account or sign in first, then join this pool.");
+      return;
+    }
     document.body.classList.remove("auth-boot-pending","pool-route-boot");
     if(typeof restorePoolTabFromHash==="function")restorePoolTabFromHash({clearBoot:true});
     if(typeof renderLeaderboard==="function")renderLeaderboard();
@@ -534,6 +565,7 @@ function restoreLandingRouteFromHash(){
   var route=landingRouteFromHash();
   if(!route)return false;
   if(route.type==="public"&&typeof setLandingPublicSection==="function"){
+    cleanPublicLandingRouteSearch(route.section);
     setLandingPublicSection(route.section,{preserveHash:true,scroll:false});
     if(route.anchor){
       setTimeout(function(){
@@ -544,10 +576,12 @@ function restoreLandingRouteFromHash(){
     return true;
   }
   if(route.type==="onboarding"&&typeof showLandingOnboarding==="function"){
+    if(route.mode==="start"||route.mode==="login")cleanPublicLandingRouteSearch(route.mode==="start"?"start-pool":"login");
     showLandingOnboarding(route.mode,{preserveHash:true,scroll:false});
     return true;
   }
   if(route.type==="my-pools"&&typeof showMyPoolsView==="function"){
+    cleanPublicLandingRouteSearch("my-pools");
     if(authReady&&!currentUser){
       showLandingOnboarding("login",{preserveHash:false,scroll:false});
       return true;
@@ -613,15 +647,24 @@ function quickPoolSetupUrl(id){
   url.hash="#quick-setup";
   return url.toString();
 }
+function invitePrefillPoolCode(){
+  return communityPoolPublicCode(currentPoolId)||displayPoolCode(currentPoolCode()||invitedPoolId||currentPoolId);
+}
+function invitePrefillPasscode(){
+  return communityPoolPublicPasscode(currentPoolId)||currentJoinCode();
+}
 function prefillInviteCodeInputs(){
-  ["setupJoinPoolCode","joinPoolCode"].forEach(function(id){
-    var input=document.getElementById(id);
-    if(!input)return;
-    if(input.dataset.invitePrefill==="1"){
-      input.value="";
-      delete input.dataset.invitePrefill;
-    }
-  });
+  if(!invitedPoolId)return;
+  var code=invitePrefillPoolCode();
+  var pass=invitePrefillPasscode();
+  var codeInput=document.getElementById("setupJoinPoolCode");
+  var passInput=document.getElementById("setupJoinPoolPasscode");
+  if(codeInput&&code&&!codeInput.value){codeInput.value=code;codeInput.dataset.invitePrefill="1";}
+  if(passInput&&pass&&!passInput.value){passInput.value=pass;passInput.dataset.invitePrefill="1";}
+  if(codeInput&&codeInput.dataset.invitePrefill==="1"&&codeInput.value!==code)codeInput.value=code;
+  if(passInput&&pass&&passInput.dataset.invitePrefill==="1"&&passInput.value!==pass)passInput.value=pass;
+  var helper=document.querySelector(".join-code-helper");
+  if(helper&&code)helper.textContent=pass?"Your invite details are filled in. Create an account or sign in, then tap Join Invited Pool.":"Your pool code is filled in. Create an account or sign in, then enter the passcode from your invite.";
 }
 function localPreviewUrl(){
   return "http://127.0.0.1:8125/index.html"+window.location.search;
@@ -741,6 +784,7 @@ let accountNeedsPoolChoice=false;
 let currentAccountData={};
 let currentPoolMemberApproved=false;
 let currentJoinRequestStatus="";
+let lastPoolJoinAlreadyMember=false;
 let accountCreateBusy=false;
 let accountSignInBusy=false;
 let publicLandingAuthIntent=godModeRequested;
@@ -1786,8 +1830,26 @@ function setSetupMessage(text,bad){
     msg.textContent=text||"";
   }
 }
+function setSetupMessageHtml(html,bad){
+  var msg=document.getElementById("setupStatus");
+  if(msg){
+    msg.style.color=bad?"#fc8181":"#f6d46b";
+    msg.classList.toggle("setup-status-good",!!html&&!bad);
+    msg.classList.toggle("setup-status-bad",!!html&&!!bad);
+    msg.innerHTML=html||"";
+  }
+}
 function emailVerificationSenderNote(){
-  return "For now, it may come from noreply@ufc328pool.firebaseapp.com while we finish verifying the Fight Locks email. Sorry about that - we're working on it.";
+  return "Please check your spam, junk, or promotions folder. Look for sender: Firebase <noreply@ufc328pool.firebaseapp.com>.";
+}
+function emailVerificationSenderHtml(){
+  return '<span class="verify-spam-warning">Please check your spam, junk, or promotions folder.</span> Look for sender: Firebase &lt;noreply@ufc328pool.firebaseapp.com&gt;.';
+}
+function isSignedInProfileReady(){
+  return !!(currentUser&&((currentMember&&((currentMember.name||currentMember.username||currentMember.fullName)||(currentMember.email)))||currentUser.email));
+}
+function isReadyForPoolChoice(){
+  return !!(isSignedInProfileReady()&&(!currentUser.email||currentUser.emailVerified));
 }
 function setEmailVerifyPanel(on,email){
   var card=document.getElementById("emailVerifyCard");
@@ -1795,11 +1857,15 @@ function setEmailVerifyPanel(on,email){
   if(card)card.classList.toggle("show",!!on);
   if(text&&on){
     var target=email||currentUser&&currentUser.email||"your email";
-    text.textContent="We sent a verification email to "+target+". "+emailVerificationSenderNote()+" If you do not see it in your inbox, check your spam, junk, or promotions folder. Tap the verification link, then close that email tab and come back here to finish choosing your pool.";
+    text.innerHTML="We sent a verification email to "+escapeHtml(target)+". "+emailVerificationSenderHtml()+" Tap the verification link, then close that email tab and come back here to finish choosing your pool.";
   }
 }
 function emailVerificationSetupMessage(email){
-  return "Account created. We sent a verification email to "+(email||"your email")+". "+emailVerificationSenderNote()+" If you do not see it in your inbox, check your spam, junk, or promotions folder. Verify it, then come back here and tap I Verified My Email.";
+  return "Account pending. We sent a verification email to "+(email||"your email")+". "+emailVerificationSenderNote()+" Verify it, then come back here and tap I Verified My Email.";
+}
+function emailVerificationSetupMessageHtml(email){
+  var target=escapeHtml(email||"your email");
+  return "Account pending. We sent a verification email to "+target+". "+emailVerificationSenderHtml()+" Verify it, then come back here and tap I Verified My Email.";
 }
 async function sendAccountVerificationEmail(force){
   if(!currentUser||currentUser.emailVerified)return false;
@@ -1822,7 +1888,7 @@ async function requireVerifiedEmailForPath(){
   accountNeedsPoolChoice=true;
   markSetupPathReady(false);
   setEmailVerifyPanel(true,currentUser.email);
-  setSetupMessage("Verify your email before choosing a pool. "+emailVerificationSenderNote()+" If you do not see the email in your inbox, check your spam, junk, or promotions folder. Then come back and tap I Verified My Email.",true);
+  setSetupMessage("Verify your email before choosing a pool. "+emailVerificationSenderNote()+" Then come back and tap I Verified My Email.",true);
   setMemberMessage("Verify your email before choosing a pool.",true);
   renderMemberGate();
   return false;
@@ -1853,7 +1919,7 @@ window.resendAccountVerificationEmail=async function(){
   try{
     await sendAccountVerificationEmail(true);
     setEmailVerifyPanel(true,currentUser.email);
-    setSetupMessage("Verification email sent again. "+emailVerificationSenderNote()+" If you do not see it in your inbox, check your spam, junk, or promotions folder.",false);
+    setSetupMessage("Verification email sent again. "+emailVerificationSenderNote(),false);
   }catch(e){
     console.error(e);
     setSetupMessage("Could not send the verification email right now. Check the connection and try again.",true);
@@ -1915,19 +1981,36 @@ function clearManualPoolOpen(){
 function hasManualPoolOpenIntent(){
   try{return poolSlug(sessionStorage.getItem(manualPoolOpenStorageKey()))===currentPoolId;}catch(e){return false;}
 }
+function canOpenCurrentPoolRoute(){
+  return !!(hasManualPoolOpenIntent()||(invitedPoolId&&userHasCurrentPoolAccess()));
+}
 function shouldHoldPoolRouteOpen(){
   if(!invitedPoolId||currentPoolDeleted)return false;
   if(currentPoolChecked&&currentPoolExists===false)return false;
   return true;
 }
 function hasExplicitPoolOpenIntent(){
-  var hasIntent=!!(hasManualPoolOpenIntent()||(invitedPoolId&&(userHasCurrentPoolAccess()||shouldHoldPoolRouteOpen())));
+  var hasIntent=canOpenCurrentPoolRoute();
   routeDebugState({functionName:"hasExplicitPoolOpenIntent",reason:hasIntent?"explicit-pool-intent":"no-explicit-pool-intent",hasIntent:hasIntent});
   return hasIntent;
 }
 function routePostLoginToMyPools(message){
-  if(shouldHoldPoolRouteOpen()){
-    routeDebugState({functionName:"routePostLoginToMyPools",reason:"held-explicit-pool-url"});
+  if(invitedPoolId&&!userHasCurrentPoolAccess()){
+    routeDebugState({functionName:"routePostLoginToMyPools",reason:"invite-requires-join"});
+    accountNeedsPoolChoice=true;
+    markSetupPathReady(true);
+    setEmailVerifyPanel(false);
+    if(message)setSetupMessage(message);
+    renderKnownPools();
+    renderMemberGate();
+    showLandingOnboarding("join",{preserveHash:false,scroll:false});
+    prefillInviteCodeInputs();
+    setSetupMessage("Create an account or sign in first, then join this pool.");
+    setMemberMessage("Create an account or sign in first, then join this pool.");
+    return;
+  }
+  if(shouldHoldPoolRouteOpen()&&userHasCurrentPoolAccess()){
+    routeDebugState({functionName:"routePostLoginToMyPools",reason:"held-approved-pool-url"});
     accountNeedsPoolChoice=false;
     markSetupPathReady(false);
     setEmailVerifyPanel(false);
@@ -2232,17 +2315,11 @@ function currentFreePoolUnlimitedPlayersUnlocked(){
 }
 window.currentFreePoolUnlimitedPlayersUnlocked=currentFreePoolUnlimitedPlayersUnlocked;
 function canSeeAdminUpgradeControls(){
-  return isFreeStarterPool()&&typeof isPoolAdmin==="function"&&isPoolAdmin();
+  return false;
 }
 window.canSeeAdminUpgradeControls=canSeeAdminUpgradeControls;
 function canSeeMakePicksUpgradeComparison(){
-  if(isUfc328PreviewMode())return false;
-  var pool=currentPoolMeta||{};
-  var raw=pool.planType||pool.plan||pool.tier||pool.pricingPlan||"";
-  var plan=getPoolPlanType(pool);
-  if(plan==="free_starter")return true;
-  if(!raw&&!plan)return true;
-  return normalizeStartPoolPlan(raw)==="free_starter";
+  return false;
 }
 window.canSeeMakePicksUpgradeComparison=canSeeMakePicksUpgradeComparison;
 function makePicksUpgradeOpenAttr(){
@@ -2353,6 +2430,9 @@ function poolStatusLabel(pool){
   return "Active";
 }
 function poolEventLabel(pool){
+  var id=poolSlug(pool&&pool.poolId);
+  var name=poolFieldValue(pool,["poolName","name","title"]);
+  if(isFreedom250CommunityPool(id)||/freedom\s*250/i.test(name))return "Current event: UFC Freedom 250";
   return poolFieldValue(pool,["eventName","eventTitle","currentEvent","event","eventId"])||"Current event: UFC 328: Chimaev vs Strickland";
 }
 function poolDateChip(pool){
@@ -2362,6 +2442,77 @@ function poolDateChip(pool){
   if(isNaN(d.getTime()))return "";
   return "Updated "+d.toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"});
 }
+function feedbackStatus(text,tone){
+  var el=document.getElementById("feedbackStatus");
+  if(!el)return;
+  el.classList.toggle("bad",tone==="bad");
+  el.classList.toggle("good",tone==="good");
+  el.textContent=text||"";
+}
+window.openFeedbackModal=function(){
+  var modal=document.getElementById("feedbackModal");
+  if(!modal)return;
+  var email=document.getElementById("feedbackEmailInput");
+  if(email&&!email.value){
+    email.value=(currentUser&&currentUser.email)||(currentMember&&currentMember.email)||"";
+  }
+  feedbackStatus("");
+  modal.hidden=false;
+  modal.removeAttribute("aria-hidden");
+  modal.classList.add("show");
+  setTimeout(function(){
+    var message=document.getElementById("feedbackMessageInput");
+    if(message)message.focus();
+  },0);
+};
+window.closeFeedbackModal=function(){
+  var modal=document.getElementById("feedbackModal");
+  if(!modal)return;
+  modal.classList.remove("show");
+  modal.hidden=true;
+  modal.setAttribute("aria-hidden","true");
+};
+window.submitFeedback=async function(event){
+  if(event&&event.preventDefault)event.preventDefault();
+  var emailEl=document.getElementById("feedbackEmailInput");
+  var messageEl=document.getElementById("feedbackMessageInput");
+  var btn=document.getElementById("feedbackSubmitBtn");
+  var email=(emailEl&&emailEl.value||"").trim();
+  var message=(messageEl&&messageEl.value||"").trim();
+  if(!message){feedbackStatus("Type your feedback first.", "bad");return false;}
+  if(message.length>1600){feedbackStatus("Keep feedback under 1600 characters.", "bad");return false;}
+  if(btn){btn.disabled=true;btn.textContent="Sending...";}
+  feedbackStatus("Sending feedback...");
+  try{
+    var payload={
+      email:email,
+      message:message,
+      pageUrl:window.location.href,
+      poolId:currentPoolId||"",
+      poolName:displayPoolName(currentPoolId||""),
+      userName:(currentMember&&(currentMember.fullName||currentMember.name||currentMember.username))||(currentUser&&currentUser.displayName)||"",
+      userEmail:(currentUser&&currentUser.email)||(currentMember&&currentMember.email)||email,
+      userAgent:navigator.userAgent||""
+    };
+    var res=await fetch("/.netlify/functions/send-feedback",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    var data={};
+    try{data=await res.json();}catch(e){}
+    if(!res.ok)throw new Error(data&&data.error||"Feedback could not be sent.");
+    feedbackStatus("Feedback sent. Thank you.", "good");
+    if(messageEl)messageEl.value="";
+    setTimeout(function(){window.closeFeedbackModal();},900);
+  }catch(e){
+    console.error(e);
+    feedbackStatus("Could not send feedback yet. Email team@fight-locks.com if it keeps happening.", "bad");
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="Submit Feedback";}
+  }
+  return false;
+};
 function isPreviewMyPoolsMode(){
   return shouldUseLocalFightLocksPreviewProfile()||shouldUseLocalHostedPreviewProfile()||new URLSearchParams(location.search).get("previewCard")==="ufc328";
 }
@@ -2656,6 +2807,11 @@ window.goToMyPoolsFromPool=function(){
   rememberPoolReturnRoute((window.location.hash||"#picks").replace(/^#/,"")||"picks");
   showMyPoolsNavConfirm();
 };
+window.goToHomePageFromPool=function(){
+  if(isUfc328PreviewMode())return;
+  rememberPoolReturnRoute((window.location.hash||"#picks").replace(/^#/,"")||"picks");
+  showHomePageNavConfirm();
+};
 function goToMyPoolsAfterConfirm(e){
   if(e&&typeof e.preventDefault==="function")e.preventDefault();
   if(e&&typeof e.stopPropagation==="function")e.stopPropagation();
@@ -2675,6 +2831,35 @@ function goToMyPoolsAfterConfirm(e){
     return false;
   }
   try{history.replaceState(null,"",window.location.pathname+window.location.search+"#my-pools");}catch(e){window.location.hash="#my-pools";}
+  return false;
+}
+function goToHomePageAfterConfirm(e){
+  if(e&&typeof e.preventDefault==="function")e.preventDefault();
+  if(e&&typeof e.stopPropagation==="function")e.stopPropagation();
+  if(e&&typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+  if(isUfc328PreviewMode())return false;
+  hideMyPoolsNavConfirm();
+  clearManualPoolOpen();
+  if(document.body){
+    document.body.classList.remove("pool-experience-active","pool-route-boot","local-device-pool-route-boot","mobile-pool-nav-collapsed");
+    document.body.classList.add("app-profile-locked","landing-route-active");
+  }
+  document.querySelectorAll(".view").forEach(function(view){view.classList.remove("active");});
+  var shell=document.getElementById("setupHome");
+  if(shell){
+    shell.hidden=false;
+    shell.classList.remove("my-pools-active","onboarding-active");
+  }
+  var myPools=document.getElementById("myPoolsView");
+  if(myPools)myPools.hidden=true;
+  if(typeof setLandingPublicSection==="function")setLandingPublicSection("home",{scroll:true});
+  try{
+    var url=new URL(window.location.href);
+    ["pool","community","new","host"].forEach(function(key){url.searchParams.delete(key);});
+    url.hash="#home";
+    history.replaceState(null,"",url.toString());
+  }catch(err){try{window.location.hash="#home";}catch(e){}}
+  if(typeof window.__fightLocksSyncLocalDeviceFrameRoute==="function")window.__fightLocksSyncLocalDeviceFrameRoute();
   return false;
 }
 function forceCloseMyPoolsNavConfirm(){
@@ -2711,7 +2896,7 @@ function stayInCurrentPoolFromNavConfirm(e){
   return false;
 }
 function mobilePoolNavLabel(){
-  var labels={picks:"Make Your Picks",leaderboard:"Leaderboard",mine:"My Picks",allpicks:"All Picks",stats:"Stats",scoring:"Scoring",nextevent:"Upcoming Events",chat:"Live Chat",profile:"Account",pool:"Invite Friends",admin:"Admin"};
+  var labels={picks:"Make Your Picks",leaderboard:"Leaderboard",mine:"My Picks",allpicks:"All Picks",stats:"Stats",scoring:"Scoring",nextevent:"Upcoming Events",chat:"Live Chat",profile:"Account",pool:"Invite Friends",admin:"Admin",home:"Home Page"};
   return labels[currentTab]||"Pool Menu";
 }
 function syncMobilePoolNavToggle(){
@@ -2781,6 +2966,17 @@ function bindMyPoolsGoButton(modal){
     },true);
   });
 }
+function bindHomePageGoButton(modal){
+  var goBtn=modal&&modal.querySelector("[data-pool-nav-home-go]");
+  if(!goBtn)return;
+  var freshGo=goBtn.cloneNode(true);
+  goBtn.parentNode.replaceChild(freshGo,goBtn);
+  ["pointerdown","mousedown","touchstart","click"].forEach(function(type){
+    freshGo.addEventListener(type,function(e){
+      return goToHomePageAfterConfirm(e);
+    },true);
+  });
+}
 function showMyPoolsNavConfirm(){
   if(window.__fightLocksSuppressMyPoolsConfirmUntil&&Date.now()<window.__fightLocksSuppressMyPoolsConfirmUntil)return;
   var modal=document.getElementById("poolNavConfirmModal");
@@ -2819,10 +3015,43 @@ function showMyPoolsNavConfirm(){
     if(stay)stay.focus();
   },0);
 }
+function showHomePageNavConfirm(){
+  if(window.__fightLocksSuppressMyPoolsConfirmUntil&&Date.now()<window.__fightLocksSuppressMyPoolsConfirmUntil)return;
+  var modal=document.getElementById("poolNavConfirmModal");
+  if(!modal){
+    modal=document.createElement("div");
+    modal.id="poolNavConfirmModal";
+    modal.className="pool-nav-modal";
+    modal.setAttribute("role","dialog");
+    modal.setAttribute("aria-modal","true");
+    modal.setAttribute("aria-labelledby","poolNavConfirmTitle");
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML='<div class="pool-nav-dialog" role="document">'
+    +'<h2 class="pool-nav-title" id="poolNavConfirmTitle">Home Page</h2>'
+    +'<p class="pool-nav-copy">You are leaving this pool view and going to the Fight Locks home page. Your picks will stay saved. Do you want to stay or leave?</p>'
+    +'<div class="pool-nav-actions"><button type="button" data-pool-nav-stay="1" onclick="return window.stayInCurrentPoolFromNavConfirm(event)">Stay Here</button><button class="primary" type="button" data-pool-nav-home-go="1" onclick="return window.goToHomePageAfterConfirm(event)">Leave to Home Page</button></div>'
+    +'</div>';
+  bindMyPoolsStayButton(modal);
+  bindHomePageGoButton(modal);
+  modal.removeAttribute("aria-hidden");
+  modal.hidden=false;
+  modal.style.removeProperty("display");
+  modal.style.removeProperty("pointer-events");
+  modal.style.display="flex";
+  modal.style.pointerEvents="auto";
+  modal.classList.add("show");
+  setTimeout(function(){
+    var stay=modal.querySelector("[data-pool-nav-stay]");
+    if(stay)stay.focus();
+  },0);
+}
 window.hideMyPoolsNavConfirm=hideMyPoolsNavConfirm;
 window.stayInCurrentPoolFromNavConfirm=stayInCurrentPoolFromNavConfirm;
 window.showMyPoolsNavConfirm=showMyPoolsNavConfirm;
 window.goToMyPoolsAfterConfirm=goToMyPoolsAfterConfirm;
+window.showHomePageNavConfirm=showHomePageNavConfirm;
+window.goToHomePageAfterConfirm=goToHomePageAfterConfirm;
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape")hideMyPoolsNavConfirm();
 });
@@ -3240,8 +3469,10 @@ function updateSignedInAccountCard(active){
 function refreshLandingSignedInPanel(){
   var account=document.querySelector(".fight-landing > .setup-body");
   if(!account||account.hidden||account.classList.contains("onboarding-login"))return;
-  var signedInReady=!!(currentUser&&((currentMember&&((currentMember.name||currentMember.username||currentMember.fullName)||(currentMember.email)))||currentUser.email));
-  account.classList.toggle("account-ready",signedInReady);
+  var signedInReady=isSignedInProfileReady();
+  var poolChoiceReady=isReadyForPoolChoice();
+  account.classList.toggle("account-ready",poolChoiceReady);
+  account.classList.toggle("signed-in-unverified",!!(signedInReady&&currentUser&&currentUser.email&&!currentUser.emailVerified));
   updateSignedInAccountCard(signedInReady);
 }
 function showPublicCreateStart(){
@@ -3859,7 +4090,8 @@ window.showLandingOnboarding=function(mode,opts){
   var pathPanel=document.getElementById("setupPathPanel");
   var pathTitle=pathPanel&&pathPanel.querySelector(".setup-panel-title");
   var pathCopy=pathPanel&&pathPanel.querySelector(".setup-panel-copy");
-  var signedInReady=!!(currentUser&&((currentMember&&((currentMember.name||currentMember.username||currentMember.fullName)||(currentMember.email)))||currentUser.email));
+  var signedInReady=isSignedInProfileReady();
+  var poolChoiceReady=isReadyForPoolChoice();
   if(typeof setCommunityJoinFieldsLocked==="function")setCommunityJoinFieldsLocked(false);
   if(home)home.hidden=true;
   if(publicSection)publicSection.hidden=true;
@@ -3870,9 +4102,10 @@ window.showLandingOnboarding=function(mode,opts){
   }
   if(account){
     account.hidden=false;
-    account.classList.remove("onboarding-join","onboarding-start","onboarding-login","account-ready");
+    account.classList.remove("onboarding-join","onboarding-start","onboarding-login","account-ready","signed-in-unverified");
     account.classList.add("onboarding-"+mode);
-    account.classList.toggle("account-ready",signedInReady&&mode!=="login");
+    account.classList.toggle("account-ready",poolChoiceReady&&mode!=="login");
+    account.classList.toggle("signed-in-unverified",!!(mode!=="login"&&signedInReady&&currentUser&&currentUser.email&&!currentUser.emailVerified));
   }
   updateSignedInAccountCard(signedInReady&&mode!=="login");
   if(poolTypes)poolTypes.classList.toggle("show",mode==="start");
@@ -3895,16 +4128,22 @@ window.showLandingOnboarding=function(mode,opts){
   }else{
     resetStartPoolPlanSelection();
     if(title){title.classList.remove("login-title-wrap");title.classList.add("has-title-art");title.innerHTML='<span>Join Your Fight Locks Pool</span>';}
-    if(subtitle)subtitle.textContent=signedInReady?"Enter the pool code and passcode from your host to request access with your signed-in profile.":"Create an account or sign in, then enter the pool code and passcode from your host.";
-    if(note)note.textContent=signedInReady?"You're signed in, so joining another pool will use your current account.":"Players do not pay Fight Locks to join a pool. Any private group arrangements are handled outside Fight Locks by the host and participants.";
+    if(subtitle)subtitle.textContent=poolChoiceReady?"Enter the pool code and passcode from your host to request access with your signed-in profile.":"Create your account first. After your email is verified, the invite details stay ready and you can join the pool.";
+    if(note)note.textContent=poolChoiceReady?"You're signed in, so joining another pool will use your current account.":"Players do not pay Fight Locks to join a pool. Any private group arrangements are handled outside Fight Locks by the host and participants.";
     if(pathTitle)pathTitle.textContent="Join By Code";
     if(pathCopy)pathCopy.textContent="Enter the pool code and join passcode from your host.";
     if(!signedInReady)showCreateAccountMode();
+    else if(!poolChoiceReady){
+      setEmailVerifyPanel(true,currentUser&&currentUser.email);
+      setSetupMessage("Verify your email before joining the pool. "+emailVerificationSenderNote()+" Then come back and tap I Verified My Email.",true);
+    }
     else setSetupMessage("Enter the pool code and join passcode.");
   }
   if(!opts.preserveHash)updateLandingRouteHash(mode==="start"?"start-pool":(mode==="login"?"login":"join-pool"));
   if(mode==="join"&&typeof shouldActivateCommunityJoin==="function"&&shouldActivateCommunityJoin()){
     setTimeout(prefillCommunityPoolJoin,0);
+  }else if(mode==="join"&&invitedPoolId){
+    setTimeout(prefillInviteCodeInputs,0);
   }
   if(opts.scroll!==false)window.scrollTo({top:0,behavior:"smooth"});
 };
@@ -5014,7 +5253,7 @@ window.createAccountOnly=async function(){
       try{await sendAccountVerificationEmail(false);}catch(e){console.warn("Could not send verification email",e);}
       markSetupPathReady(false);
       setEmailVerifyPanel(true,currentUser.email||profileInputs.email);
-      setSetupMessage(emailVerificationSetupMessage(currentUser.email||profileInputs.email));
+      setSetupMessageHtml(emailVerificationSetupMessageHtml(currentUser.email||profileInputs.email),false);
       setMemberMessage("Verify your email to finish choosing a pool.");
       renderMemberGate();
       return;
@@ -5023,6 +5262,16 @@ window.createAccountOnly=async function(){
     setEmailVerifyPanel(false);
     if(isCommunityJoinFlowActive()){
       keepCommunityJoinReady(accountSyncPending?localAccountCreatedMessage():accountCreatedMessage());
+      return;
+    }
+    if(invitedPoolId){
+      accountNeedsPoolChoice=true;
+      markSetupPathReady(true);
+      setEmailVerifyPanel(false);
+      showLandingOnboarding("join",{preserveHash:true,scroll:false});
+      prefillInviteCodeInputs();
+      setSetupMessage("Account created. Your invite details are filled in. Tap Join Invited Pool to enter.");
+      renderMemberGate();
       return;
     }
     setSetupMessage(accountSyncPending?localAccountCreatedMessage():accountCreatedMessage());
@@ -5297,8 +5546,8 @@ window.completeProfileSetup=async function(action){
 		    try{
 		      if(!(await requestJoinApproval(code,profile,"code")))return;
 		    }catch(e){console.error(e);setSetupMessage("Could not join that pool. Try again.",true);return;}
-	    trackCreatorEvent("pool_joined_by_code",{poolId:code,poolName:displayPoolName(code),uid:currentUser&&currentUser.uid,email:currentMember&&currentMember.email,name:currentMember&&currentMember.name});
-	    setSetupMessage("You're in. Make your picks when you're ready.");
+	    if(!lastPoolJoinAlreadyMember)trackCreatorEvent("pool_joined_by_code",{poolId:code,poolName:displayPoolName(code),uid:currentUser&&currentUser.uid,email:currentMember&&currentMember.email,name:currentMember&&currentMember.name});
+	    setSetupMessage(lastPoolJoinAlreadyMember?"You're already in this pool. Make your picks when you're ready.":"You're in. Make your picks when you're ready.");
 	    if(code!==currentPoolId){window.location.href=poolInviteUrl(code).replace(/#.*/,"")+"#picks";return;}
 	    openJoinedPoolAfterJoin(code);
 	    return;
@@ -5308,8 +5557,8 @@ window.completeProfileSetup=async function(action){
 		  try{
 		    if(!(await requestJoinApproval(currentPoolId,profile,"invite")))return;
 		  }catch(e){console.error(e);setSetupMessage("Could not join that pool. Try again.",true);return;}
-	  trackCreatorEvent("pool_joined_from_invite",{poolId:currentPoolId,poolName:displayPoolName(currentPoolId),uid:currentUser&&currentUser.uid,email:currentMember&&currentMember.email,name:currentMember&&currentMember.name});
-	  setSetupMessage("You're in. Make your picks when you're ready.");
+	  if(!lastPoolJoinAlreadyMember)trackCreatorEvent("pool_joined_from_invite",{poolId:currentPoolId,poolName:displayPoolName(currentPoolId),uid:currentUser&&currentUser.uid,email:currentMember&&currentMember.email,name:currentMember&&currentMember.name});
+	  setSetupMessage(lastPoolJoinAlreadyMember?"You're already in this pool. Make your picks when you're ready.":"You're in. Make your picks when you're ready.");
 	  openJoinedPoolAfterJoin(currentPoolId);
 };
 async function ensurePoolMeta(){
@@ -5415,7 +5664,7 @@ window.createPoolFromName=async function(){
 function inviteShareText(){
   var publicCode=communityPoolPublicCode(currentPoolId)||displayPoolCode(currentPoolCode());
   var publicPass=communityPoolPublicPasscode(currentPoolId)||currentJoinCode();
-  return "Join my Fight Locks pool: "+displayPoolName(currentPoolId)+". Pool name code: "+publicCode+". Join passcode: "+publicPass+". Make your picks here:";
+  return "LOCK IN! Join my Fight Locks Pool.\n\nPool name: "+displayPoolName(currentPoolId)+"\nPool code: "+publicCode+"\nPasscode: "+publicPass+"\n\nMake your picks here:";
 }
 function inviteMessageText(){
   return inviteShareText()+" "+(isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true));
@@ -5442,7 +5691,7 @@ window.copySavedPoolInvite=async function(poolId){
   var url=poolJoinUrl(poolId,true);
   var name=poolFieldValue(pool,["poolName","name","title"])||displayPoolName(poolId);
   var passcode=pool.joinCode||pool.poolCode||"";
-  var text="Join my Fight Locks pool: "+name+". Pool name code: "+displayPoolCode(poolId)+(passcode?". Join passcode: "+passcode+".":" .")+" Make your picks here: "+url;
+  var text="LOCK IN! Join my Fight Locks Pool.\n\nPool name: "+name+"\nPool code: "+displayPoolCode(poolId)+(passcode?"\nPasscode: "+passcode:"")+"\n\nMake your picks here: "+url;
   try{
     await navigator.clipboard.writeText(text);
     showTemporaryMessage(msg,"Invite copied for "+name+".",true,180000);
@@ -5677,6 +5926,8 @@ function renderPoolShell(){
   if(statusPlayers)statusPlayers.textContent=maxPlayers===Infinity?(playerCount+" players joined"):(playerCount+" of "+maxPlayers+" spots used");
   if(statusPlan)statusPlan.textContent=currentPoolPlanLabel();
   if(picksName)picksName.textContent=displayPoolName(currentPoolId);
+  var picksToggleName=document.getElementById("currentPicksPoolToggleName");
+  if(picksToggleName)picksToggleName.textContent=displayPoolName(currentPoolId);
   if(picksCode)picksCode.textContent=poolCode;
   if(picksPass)picksPass.textContent=joinCode;
   if(link)link.value=isFreedom250CommunityPool()?communityPoolInviteUrl(currentPoolId,true):poolJoinUrl(currentPoolCode(),true);
@@ -5696,6 +5947,11 @@ function renderPoolShell(){
     keyBox.innerHTML=owner&&key?'<strong>Admin Access Note</strong>Keep your admin access private. Your signed-in account unlocks admin controls on this device.':'';
 	  }
   renderBillingPlanPanels();
+  if(typeof applyPicksInfoCardState==="function")applyPicksInfoCardState();
+  if(typeof isPoolAdmin==="function"&&isPoolAdmin()){
+    if(typeof startAdminListeners==="function")startAdminListeners();
+    if(typeof renderHostJoinNotice==="function")renderHostJoinNotice();
+  }
 	}
 
 function godEsc(v){
@@ -5886,6 +6142,7 @@ function renderJoinRequests(){
     +'</div>';
 }
 async function requestJoinApproval(poolId,profile,source){
+  lastPoolJoinAlreadyMember=false;
   if(!currentUser){setSetupMessage("Create or sign in to your account first.",true);return false;}
   poolId=poolSlug(poolId)||currentPoolId;
   var poolSnap=await getDoc(doc(db,"pools",poolId));
@@ -5900,9 +6157,12 @@ async function requestJoinApproval(poolId,profile,source){
   var poolData=poolSnap.data()||{};
   var permissions=getPlanPermissions(poolData);
   if(poolFreeUnlimitedPlayersUnlocked(poolData))permissions=Object.assign({},permissions,{maxPlayers:Infinity});
+  var existingMember=null;
+  try{existingMember=await getDoc(doc(db,"pools",poolId,"members",currentUser.uid));}catch(e){existingMember=null;}
+  var wasAlreadyMember=!!(existingMember&&existingMember.exists());
+  lastPoolJoinAlreadyMember=wasAlreadyMember;
   if(permissions.maxPlayers!==Infinity){
-    var existingMember=await getDoc(doc(db,"pools",poolId,"members",currentUser.uid));
-    if(!existingMember.exists()){
+    if(!wasAlreadyMember){
       var count=await poolParticipantCount(poolId);
       if(count>=permissions.maxPlayers){
         setSetupMessage(freeStarterLimitMessage(),true);
@@ -5913,10 +6173,13 @@ async function requestJoinApproval(poolId,profile,source){
   var names=normalizedProfileNames(profile);
   var now=new Date().toISOString();
   var poolName=poolData.poolName||displayPoolName(poolId);
-  var member={memberId:currentUser.uid,authUid:currentUser.uid,poolId:poolId,firstName:names.firstName,lastName:names.lastName,fullName:names.fullName,username:profile.username||profile.name,name:profile.name||profile.username||names.fullName,email:profile.email||currentUser.email||"",createdAt:now,updatedAt:now,joinedAt:now,joinSource:source||"join"};
+  var existingMemberData=wasAlreadyMember?(existingMember.data()||{}):{};
+  var existingJoinedPool=currentAccountData&&currentAccountData.joinedPools&&currentAccountData.joinedPools[poolId]||{};
+  var originalJoinedAt=existingMemberData.joinedAt||existingJoinedPool.joinedAt||now;
+  var member={memberId:currentUser.uid,authUid:currentUser.uid,poolId:poolId,firstName:names.firstName,lastName:names.lastName,fullName:names.fullName,username:profile.username||profile.name,name:profile.name||profile.username||names.fullName,email:profile.email||currentUser.email||"",createdAt:existingMemberData.createdAt||now,updatedAt:now,joinedAt:originalJoinedAt,joinSource:existingMemberData.joinSource||source||"join"};
   await setDoc(doc(db,"pools",poolId,"members",currentUser.uid),member,{merge:true});
   try{await deleteDoc(doc(db,"pools",poolId,"joinRequests",currentUser.uid));}catch(e){console.warn("Could not clear old join request",e);}
-  await setDoc(userRootDoc(currentUser.uid),{uid:currentUser.uid,memberId:currentUser.uid,firstName:names.firstName,lastName:names.lastName,fullName:names.fullName,username:member.username,usernameKey:usernameKey(member.username),name:member.name,email:member.email,joinedPools:{[poolId]:{poolId:poolId,poolName:poolName,joinedAt:now,updatedAt:now}},lastPoolAction:{type:"joined_pool",poolId:poolId,poolName:poolName,at:now,status:"joined"},updatedAt:now},{merge:true});
+  await setDoc(userRootDoc(currentUser.uid),{uid:currentUser.uid,memberId:currentUser.uid,firstName:names.firstName,lastName:names.lastName,fullName:names.fullName,username:member.username,usernameKey:usernameKey(member.username),name:member.name,email:member.email,joinedPools:{[poolId]:{poolId:poolId,poolName:poolName,joinedAt:originalJoinedAt,updatedAt:now}},lastPoolAction:{type:wasAlreadyMember?"already_joined_pool":"joined_pool",poolId:poolId,poolName:poolName,at:now,status:"joined"},updatedAt:now},{merge:true});
   if(poolId===currentPoolId){
     currentJoinRequestStatus="approved";
     currentPoolMemberApproved=true;
@@ -5925,8 +6188,8 @@ async function requestJoinApproval(poolId,profile,source){
     storeMemberProfile(currentMember);
     applyMemberProfileToPage();
   }
-  currentAccountData=Object.assign({},currentAccountData||{},{joinedPools:Object.assign({},currentAccountData&&currentAccountData.joinedPools||{},{[poolId]:{poolId:poolId,poolName:poolName,joinedAt:now,updatedAt:now}}),lastPoolAction:{type:"joined_pool",poolId:poolId,poolName:poolName,at:now,status:"joined"},updatedAt:now});
-  await addPoolNotice("member_joined",poolId,{uid:currentUser.uid,memberId:currentUser.uid,email:member.email,name:member.name,poolName:poolName});
+  currentAccountData=Object.assign({},currentAccountData||{},{joinedPools:Object.assign({},currentAccountData&&currentAccountData.joinedPools||{},{[poolId]:{poolId:poolId,poolName:poolName,joinedAt:originalJoinedAt,updatedAt:now}}),lastPoolAction:{type:wasAlreadyMember?"already_joined_pool":"joined_pool",poolId:poolId,poolName:poolName,at:now,status:"joined"},updatedAt:now});
+  if(!wasAlreadyMember)await addPoolNotice("member_joined",poolId,{uid:currentUser.uid,memberId:currentUser.uid,email:member.email,name:member.name,poolName:poolName});
   return true;
 }
 async function approvePoolMemberFromRequest(req){
@@ -7970,6 +8233,7 @@ function renderPickSaveMessage(msg){
   msg=msg||ensureSubmitMessageTarget();
   if(!msg)return;
   var text="✅ "+(window.__lastPickSaveMsg||"Picks updated successfully.");
+  msg.classList.remove("submit-msg-error");
   msg.classList.add("submit-msg-saved");
   msg.dataset.savedAt=String(window.__lastPickSaveAt||Date.now());
   msg.innerHTML='<span class="submit-save-text">'+escapeHtml(text)+'</span>'+(shouldShowMakePicksTopButton()?'<button type="button" class="submit-scroll-top-btn" onclick="scrollMakePicksToTop()">Scroll to Top</button>':'');
@@ -9408,15 +9672,15 @@ function renderHowScoringWorks(){
   }else{
     fighterPickHtml='<div class="scoring-key-category"><div class="scoring-key-category-name">Fighter Pick</div><div class="scoring-key-category-picks"><span class="scoring-key-chip">Heavy Fav <= -250 '+scoringKeyPointPill(scoringKeyWinPoints("heavyFav"),"fav")+'</span><span class="scoring-key-chip">Favorite -249 to -101 '+scoringKeyPointPill(scoringKeyWinPoints("normalFav"),"fav")+'</span><span class="scoring-key-chip">Underdog +100 to +249 '+scoringKeyPointPill(scoringKeyWinPoints("smallDog"),"dog")+'</span><span class="scoring-key-chip">Big Dog +250 to +499 '+scoringKeyPointPill(scoringKeyWinPoints("bigDog"),"big")+'</span><span class="scoring-key-chip">Huge Dog +500+ '+scoringKeyPointPill(scoringKeyWinPoints("majorDog"),"big")+'</span></div></div>';
   }
-  lines.push('<div class="scoring-guide-copy scoring-guide-copy-center">Choose the fighter you think wins each matchup, then make the extra calls available for that fight: method of victory, round or distance, over/under, and your Lock of the Night from anywhere on the card. Fighter points are based on the selected fighter odds when picks are locked.</div>');
+  lines.push('<div class="scoring-guide-copy scoring-guide-copy-center">Choose the fighter you think wins each matchup, then make the extra calls available for that fight: method of victory, round or distance, over/under, and your Lock of the Night from anywhere on the card. Keep an eye on the odds as fights get closer: a favorite can become an underdog, or an underdog can become a favorite. Fighter points are based on the selected fighter odds when picks officially lock.</div>');
   lines.push('<details class="scoring-key-card"><summary class="scoring-key-head" onmousedown="clearScoringKeySelection()" onclick="return toggleScoringKeyCard(this,event)" onkeydown="if(event.key===\'Enter\'||event.key===\' \')return toggleScoringKeyCard(this,event);"><div><div class="scoring-key-title">Scoring Key</div><div class="scoring-key-sub">Quick guide before picks</div></div><span class="scoring-key-toggle" aria-hidden="true"></span></summary><div class="scoring-key-categories">'+fighterPickHtml+'<div class="scoring-key-category"><div class="scoring-key-category-name">Method of Victory</div><div class="scoring-key-category-picks">'+scoringKeyChip("KO/TKO",scoringKeyMethodPoints("ko"))+scoringKeyChip("Submission",scoringKeyMethodPoints("sub"))+scoringKeyChip("Decision",scoringKeyMethodPoints("dec"))+'</div></div><div class="scoring-key-category"><div class="scoring-key-category-name">Round Prediction</div><div class="scoring-key-category-picks">'+scoringKeyTimingChips()+'</div></div><div class="scoring-key-category"><div class="scoring-key-category-name">Over/Under Rounds</div><div class="scoring-key-category-picks">'+scoringKeyChip("Over/Under",scoringKeyOverUnderPoints())+'</div></div>'+(cardScoring.lockEnabled?'<div class="scoring-key-category"><div class="scoring-key-category-name">Lock of the Night</div><div class="scoring-key-category-picks">'+lockChip+'</div></div>':'')+'</div><div class="scoring-key-note">Method and round/distance require your fighter to win. Over/Under can still score even if your fighter loses. Lock adds bonus points only when your locked fighter wins.</div></details>');
   lines.push('<details class="scoring-explain-card" open><summary class="scoring-explain-head"><div class="scoring-explain-title">How Each Pick Scores</div><span class="scoring-explain-toggle"></span></summary><div class="scoring-explain-body"><div class="scoring-explain-group"><div class="scoring-explain-group-label">Fight Result Picks</div><div class="scoring-explain-list">'
-    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Fighter</div><div class="scoring-explain-copy">Pick the fighter you think wins the matchup. If your fighter wins, you earn the fighter points shown in the key based on their odds. If your fighter loses, this pick scores 0.</div></div>'
-    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Method of Victory</div><div class="scoring-explain-copy">Pick how your selected fighter wins: KO/TKO, submission, or decision. Method points only count if you picked the winning fighter. If you picked the losing fighter, the method pick does not score.</div></div>'
-    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Round Prediction</div><div class="scoring-explain-copy">Pick the round your fighter wins in, or choose distance for a decision. Round or distance points only count if you picked the winning fighter.</div></div>'
+    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Fighter</div><div class="scoring-explain-copy">Pick the fighter you think wins the matchup. If your fighter wins, you earn the fighter points shown in the key based on their odds. If your fighter loses, this pick scores 0.<div class="scoring-explain-example">Example: You pick Lopes and Lopes wins. You get the fighter points shown for Lopes. If Garcia wins, your Lopes pick gets 0.</div></div></div>'
+    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Method of Victory</div><div class="scoring-explain-copy">Pick how your selected fighter wins: KO/TKO, submission, or decision. Method points only count if you picked the winning fighter. If you picked the losing fighter, the method pick does not score.<div class="scoring-explain-example">Example: You pick Lopes by KO/TKO. If Lopes wins by KO/TKO, you get fighter points plus method points. If Garcia wins by KO/TKO, you get 0 method points because your fighter lost.</div></div></div>'
+    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Round Prediction</div><div class="scoring-explain-copy">Pick the round your fighter wins in, or choose distance for a decision. Round or distance points only count if you picked the winning fighter.<div class="scoring-explain-example">Example: You pick Lopes in Round 2. If Lopes wins in Round 2, you get the round points. If Garcia wins in Round 2, your round pick gets 0 because Lopes did not win.</div></div></div>'
     +'</div></div><div class="scoring-explain-group"><div class="scoring-explain-group-label">Bonus Picks</div><div class="scoring-explain-list">'
-    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Over/Under Rounds</div><div class="scoring-explain-copy">Three-round fights use a 1.5 round line, and five-round fights use a 2.5 round line. This is its own bonus pick for that fight: your fighter can lose and you can still earn the Over/Under points if you guessed the line correctly.</div></div>'
-    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Lock of the Night</div><div class="scoring-explain-copy">Choose one of your picked fighters as your Lock of the Night. If that fighter wins, you earn their fighter points plus the Lock bonus on top. If the locked fighter loses, the Lock bonus scores 0, so choose carefully.</div></div>'
+    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Over/Under Rounds</div><div class="scoring-explain-copy">Three-round fights use a 1.5 round line, and five-round fights use a 2.5 round line. This is its own bonus pick for that fight: your fighter can lose and you can still earn the Over/Under points if you guessed the line correctly.<div class="scoring-explain-example">Example: You pick Under 1.5 and the fight ends in Round 1. You get the Over/Under point even if the fighter you picked lost.</div></div></div>'
+    +'<div class="scoring-explain-item"><div class="scoring-explain-name">Lock of the Night</div><div class="scoring-explain-copy">Choose one of your picked fighters as your Lock of the Night. If that fighter wins, you earn their fighter points plus the Lock bonus on top. If the locked fighter loses, the Lock bonus scores 0, so choose carefully.<div class="scoring-explain-example">Example: Lopes is your Lock. If Lopes wins, you get Lopes fighter points plus the Lock bonus. If Lopes loses, the Lock bonus is 0.</div></div></div>'
     +'</div></div></div></details>');
   el.innerHTML=lines.join("");
 }
@@ -10438,7 +10702,7 @@ function updateProgress(){
 	    if(fastestRequired)progressParts.push("Fastest Finish "+(previewProgress?(fastestDone?"filled":"needed"):(fastestDone?"set":"needed")));
 	    progressTxt.textContent=(previewProgress?"Card Checklist: ":"Progress: ")+progressParts.join(" · ");
 	  }
-  var btn=document.getElementById("submitBtn");btn.disabled=locked||!allOk;if(myDocId){btn.textContent="Update Picks";btn.className="btn-primary updated";}else{btn.textContent="Lock In Picks";btn.className="btn-primary";}if(locked){btn.textContent="🔒 Picks Locked";btn.disabled=true;document.querySelectorAll(".fighter-btn,.prop-btn,.lock-btn").forEach(function(el){el.classList.add("locked-choice");});document.querySelectorAll(".pick-extra-select").forEach(function(el){el.disabled=true;});}
+  var btn=document.getElementById("submitBtn");btn.disabled=locked;if(myDocId){btn.textContent="Update Picks";btn.className="btn-primary updated";}else{btn.textContent="Lock In Picks";btn.className="btn-primary";}if(locked){btn.textContent="🔒 Picks Locked";btn.disabled=true;document.querySelectorAll(".fighter-btn,.prop-btn,.lock-btn").forEach(function(el){el.classList.add("locked-choice");});document.querySelectorAll(".pick-extra-select").forEach(function(el){el.disabled=true;});}
   if(typeof renderStoredPickSaveMessage==="function")renderStoredPickSaveMessage();
   if(typeof renderMakePickFightNotices==="function")renderMakePickFightNotices();
   if(typeof renderMakePickInlineSaveButtons==="function")renderMakePickInlineSaveButtons();
@@ -11119,13 +11383,128 @@ function renderChatControls(){
     }
   }
 }
+function adminNoticePersonKey(n){
+  n=n||{};
+  return String(n.uid||n.memberId||n.authUid||n.actorUid||n.email||n.actorEmail||n.name||n.actorName||"").trim().toLowerCase();
+}
+function dedupedAdminNotifications(list){
+  var out=[], joinedByPerson={};
+  (list||[]).forEach(function(n){
+    if(!n||n.type!=="member_joined"){out.push(n);return;}
+    var key=adminNoticePersonKey(n);
+    if(!key){out.push(n);return;}
+    var existingIndex=joinedByPerson[key];
+    if(existingIndex===undefined){
+      joinedByPerson[key]=out.length;
+      out.push(n);
+      return;
+    }
+    var existing=out[existingIndex]||{};
+    if(String(n.createdAt||"")<String(existing.createdAt||""))out[existingIndex]=n;
+  });
+  return out;
+}
+var hostJoinNoticeSessionStartAt=0;
+function hostJoinNoticeStartTime(){
+  if(!hostJoinNoticeSessionStartAt)hostJoinNoticeSessionStartAt=Date.now()-3000;
+  return hostJoinNoticeSessionStartAt;
+}
+function hostJoinNoticeDismissKey(notice){
+  notice=notice||{};
+  return poolStorageKey("hostJoinNoticeDismissed:"+(notice.docId||notice.createdAt||notice.uid||notice.memberId||notice.email||"latest"));
+}
+function hostJoinNoticePerson(notice){
+  notice=notice||{};
+  return notice.name||notice.username||notice.fullName||notice.email||notice.actorName||"A player";
+}
+function hostJoinNoticeIsSelf(notice){
+  notice=notice||{};
+  var ids=[notice.uid,notice.memberId,notice.authUid,notice.actorUid].map(function(v){return String(v||"").trim();}).filter(Boolean);
+  var emails=[notice.email,notice.actorEmail].map(function(v){return String(v||"").trim().toLowerCase();}).filter(Boolean);
+  return !!((currentUser&&ids.indexOf(currentUser.uid)>-1)||(currentMember&&(ids.indexOf(currentMember.memberId)>-1||ids.indexOf(currentMember.authUid)>-1))||(currentUser&&currentUser.email&&emails.indexOf(String(currentUser.email).toLowerCase())>-1));
+}
+function latestUndismissedHostJoinNotice(){
+  try{
+    var previewParams=new URLSearchParams(location.search);
+    var previewJoinNotice=previewParams.get("hostJoinNoticePreview");
+    if(isLocalPreviewHost()&&previewJoinNotice){
+      var previewNotice={docId:"local-preview-host-join-notice-"+String(previewJoinNotice).replace(/[^a-z0-9_-]/gi,""),type:"member_joined",name:"HDair",createdAt:new Date().toISOString(),previewOnly:true};
+      try{if(localStorage.getItem(hostJoinNoticeDismissKey(previewNotice))==="1")return null;}catch(e){}
+      return previewNotice;
+    }
+  }catch(e){}
+  if(!(typeof isPoolAdmin==="function"&&isPoolAdmin()))return null;
+  var start=hostJoinNoticeStartTime();
+  var notices=dedupedAdminNotifications(adminNotifications).filter(function(n){
+    if(!n||n.type!=="member_joined")return false;
+    if(hostJoinNoticeIsSelf(n))return false;
+    var t=Date.parse(n.createdAt||"");
+    if(!t||t<start)return false;
+    try{if(localStorage.getItem(hostJoinNoticeDismissKey(n))==="1")return false;}catch(e){}
+    return true;
+  });
+  notices.sort(function(a,b){return String(b.createdAt||"").localeCompare(String(a.createdAt||""));});
+  return notices[0]||null;
+}
+function renderHostJoinNotice(){
+  var el=document.getElementById("hostJoinNotice");
+  if(!el)return;
+  var notice=latestUndismissedHostJoinNotice();
+  if(!notice||currentTab!=="picks"){
+    el.hidden=true;
+    el.innerHTML="";
+    return;
+  }
+  var who=hostJoinNoticePerson(notice);
+  el.hidden=false;
+  el.innerHTML='<div class="host-join-notice-copy"><div class="host-join-notice-kicker">Host Notice</div><div class="host-join-notice-title">New Player Joined</div><div class="host-join-notice-text">'+escapeHtml(who)+' officially joined '+escapeHtml(displayPoolName(currentPoolId))+'.</div></div><button type="button" onclick="dismissHostJoinNotice(\''+escapeHtml(notice.docId||notice.createdAt||"latest").replace(/'/g,"&#39;")+'\')">Got It</button>';
+}
+window.dismissHostJoinNotice=function(id){
+  var notice=dedupedAdminNotifications(adminNotifications).find(function(n){return String(n.docId||n.createdAt||"latest")===String(id||"");})||latestUndismissedHostJoinNotice();
+  if(notice){
+    try{localStorage.setItem(hostJoinNoticeDismissKey(notice),"1");}catch(e){}
+  }
+  renderHostJoinNotice();
+};
+function picksInfoCardStorageKey(card){
+  card=card||{};
+  return poolStorageKey("picksInfoCardCollapsed:"+(card.getAttribute&&card.getAttribute("data-collapse-key")||card.id||"card"));
+}
+function setPicksInfoCardCollapsed(card,collapsed){
+  if(!card)return;
+  card.classList.toggle("is-collapsed",!!collapsed);
+  var btn=card.querySelector(".picks-card-toggle");
+  var state=card.querySelector(".picks-card-toggle-state");
+  if(btn)btn.setAttribute("aria-expanded",collapsed?"false":"true");
+  if(state)state.textContent=collapsed?"Open":"Close";
+}
+window.togglePicksInfoCard=function(id){
+  var card=document.getElementById(id);
+  if(!card)return false;
+  var collapsed=!card.classList.contains("is-collapsed");
+  setPicksInfoCardCollapsed(card,collapsed);
+  try{localStorage.setItem(picksInfoCardStorageKey(card),collapsed?"1":"0");}catch(e){}
+  return false;
+};
+function applyPicksInfoCardState(){
+  ["currentPoolInfoCard","makePicksHelpCard"].forEach(function(id){
+    var card=document.getElementById(id);
+    if(!card)return;
+    var collapsed=false;
+    try{collapsed=localStorage.getItem(picksInfoCardStorageKey(card))==="1";}catch(e){}
+    setPicksInfoCardCollapsed(card,collapsed);
+  });
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",applyPicksInfoCardState);
+else applyPicksInfoCardState();
 function renderAdminNotifications(){
   var el=document.getElementById("adminNotifications");
   if(!el)return;
   var intro='<div class="admin-notices-intro">Pool notices help you track important activity inside this pool, such as players joining, pool settings changing, picks locking, results being updated, and admin changes.</div>';
   var examples='<div class="admin-notices-examples">Examples: player joined, pool settings saved, picks locked, results updated, admin transferred.</div>';
-  if(!adminNotifications.length){el.innerHTML=intro+'<div class="empty" style="padding:12px">No pool notices yet.<br>Important pool activity will appear here once players join or settings are updated.</div>'+examples;return;}
-  el.innerHTML=intro+adminNotifications.slice().sort(function(a,b){return String(b.createdAt||"").localeCompare(String(a.createdAt||""));}).slice(0,25).map(function(n){
+  var notices=dedupedAdminNotifications(adminNotifications);
+  if(!notices.length){el.innerHTML=intro+'<div class="empty" style="padding:12px">No pool notices yet.<br>Important pool activity will appear here once players join or settings are updated.</div>'+examples;return;}
+  el.innerHTML=intro+notices.sort(function(a,b){return String(b.createdAt||"").localeCompare(String(a.createdAt||""));}).slice(0,25).map(function(n){
     var typeLabel=String(n.type||"pool_notice").replace(/_/g," ");
     return '<div class="admin-chat-row"><div class="admin-chat-body"><div class="admin-chat-name">'+escapeHtml(n.name||n.email||n.actorName||"Pool activity")+' <span style="font-size:10px;color:var(--muted);font-weight:700">'+escapeHtml(typeLabel)+' · '+formatChatTime(n.createdAt)+'</span></div><div class="admin-chat-text">'+escapeHtml(n.message||"Pool activity updated.")+'</div></div></div>';
   }).join("");
@@ -12530,7 +12909,9 @@ window.showTab=function(tab,btn){
   if(btn)btn.classList.add("active");
   if(tab==="allpicks")renderAllPicks();
   if(tab==="picks"){
+    if(typeof isPoolAdmin==="function"&&isPoolAdmin()&&typeof startAdminListeners==="function")startAdminListeners();
     if(typeof renderMakePicksUpgradeSlot==="function")renderMakePicksUpgradeSlot();
+    if(typeof renderHostJoinNotice==="function")renderHostJoinNotice();
     setTimeout(function(){if(typeof renderMakePicksUpgradeSlot==="function")renderMakePicksUpgradeSlot();},0);
   }
   if(tab==="leaderboard"){startFinancialSettingsListeners();renderLeaderboard();}
@@ -13981,6 +14362,7 @@ liveSnapshot(function(){return poolRootDoc();},function(snap){
       if(!isNaN(snapEntryFee)&&snapEntryFee>=0)applyEntryFee(snapEntryFee,false);
     }
     refreshInviteHostName(currentPoolMeta);
+    if(invitedPoolId&&accountNeedsPoolChoice)prefillInviteCodeInputs();
     var accessReady=syncInvitedPoolAccessAfterLogin();
     renderPoolShell();
     renderFights();
@@ -14293,6 +14675,7 @@ function startAdminListeners(){
       return data;
     });
     if(document.getElementById("adminPanel").style.display!=="none")renderAdminNotifications();
+    renderHostJoinNotice();
   }));
   adminListenerUnsubs.push(liveSnapshot(function(){return poolCollection("joinRequests");},async function(snap){
     joinRequests=snap.docs.map(function(d){
@@ -15325,17 +15708,28 @@ setInterval(function(){renderTyping();refreshChatPresenceDots();},1500);
     }
     window.__allPicksEntriesRecoveryStartedAt=0;
     var order=entries.slice().sort(function(a,b){var d=calcScore(b)-calcScore(a);return d!==0?d:(a.name||'').localeCompare(b.name||'');}), html='';
-    var completedFlow=eventProgressOrder().slice().reverse().filter(function(f){var r=getEffectiveFightResult(f.id);return displayResolved(f,r);});
-    function allPicksRunningScore(entry,f){
-      var total=0, gain=0, foundIndex=-1;
-      completedFlow.forEach(function(ff,i){
-        var pts=calcFightClean(entry,ff);
-        if(ff.id===f.id){gain=pts;foundIndex=i;}
-        if(foundIndex<0||ff.id===f.id)total+=pts;
-      });
-      return {total:total,gain:gain,previous:total-gain,index:foundIndex};
+    var eventOrder=eventProgressOrder();
+    var chronologicalOrder=eventOrder.slice().reverse();
+    function chronologicalFightIndex(f){
+      for(var i=0;i<chronologicalOrder.length;i++){
+        if(chronologicalOrder[i]&&chronologicalOrder[i].id===f.id)return i;
+      }
+      return -1;
     }
-    eventProgressOrder().forEach(function(f,fightIndex){
+    function allPicksRunningScore(entry,f){
+      var total=0, gain=0, targetIndex=chronologicalFightIndex(f), hasProgress=false;
+      chronologicalOrder.forEach(function(ff,i){
+        if(targetIndex>=0&&i>targetIndex)return;
+        var rr=getEffectiveFightResult(ff.id);
+        if(!displayResolved(ff,rr))return;
+        var pts=calcFightClean(entry,ff);
+        if(ff.id===f.id)gain=pts;
+        total+=pts;
+        if(ff.id!==f.id)hasProgress=true;
+      });
+      return {total:total,gain:gain,previous:total-gain,index:targetIndex,hasProgress:hasProgress};
+    }
+    eventOrder.forEach(function(f,fightIndex){
       var res=typeof normalizeFightResultData==="function"?normalizeFightResultData(f,getEffectiveFightResult(f.id)||{}):getEffectiveFightResult(f.id), resolved=displayResolved(f,res), special=!!specialResultLabel(f,res), hasWinner=!!(res&&res.winner), wn=hasWinner?(res.winner===1?f.f1:f.f2):null, f1c=entries.filter(function(e){return e.picks[f.id]===1;}).length, f2c=entries.filter(function(e){return e.picks[f.id]===2;}).length, cc=hasWinner?entries.filter(function(e){return e.picks[f.id]===res.winner;}).length:null;
       if(resolved){
         try{
@@ -15347,8 +15741,8 @@ setInterval(function(){renderTyping();refreshChatPresenceDots();},1500);
       order.forEach(function(e,entryIndex){
         var mp=e.methods||{}, pr=getEntryProps(e), side=e.picks[f.id], nm=side===1?f.f1:f.f2, odds=side===1?f.o1:f.o2, sc=calcScore(e), correct=hasWinner&&side===res.winner;
         var bg=resolved?(special?'#2d3748':(correct?'#1c4532':'#742a2a')):(odds<0?'#2d3748':odds>=250?'#4a1628':'#1a365d'), col=resolved?(special?'#f6d46b':(correct?'#68d391':'#fc8181')):(odds<0?'#a0aec0':odds>=250?'#fc8181':'#63b3ed'), ptLbl=resolved?(correct?'+'+getWinPts(f,side)+'pt ✓':'0pt'):'+'+getWinPts(f,side)+'pt';
-        var running=resolved?allPicksRunningScore(e,f):{total:sc,gain:0,previous:sc,index:-1};
-        var scoreHtml=resolved&&running.index>0?'<div class="ap-score"><span class="ap-score-total">'+running.total+'pt</span><span class="ap-score-breakdown">'+running.previous+' before + '+running.gain+' this fight = '+running.total+' total</span></div>':'<div class="ap-score">'+running.total+'pt</div>';
+        var running=allPicksRunningScore(e,f);
+        var scoreHtml=resolved?'<div class="ap-score"><span class="ap-score-breakdown">'+running.previous+' PT before + '+running.gain+' this fight = '+running.total+' PT total</span></div>':(running.hasProgress?'<div class="ap-score ap-score-current"><span class="ap-score-breakdown">'+running.total+' PT total</span></div>':'<div class="ap-score ap-score-pending" aria-label="Score pending"></div>');
         var chips=[{hit:!!correct,html:'<div class="ap-pick"><span class="ap-tag combined-pick" style="background:'+bg+';color:'+col+'">'+(correct?'✓ ':'')+esc(last(nm))+'<span class="ap-tag-pts">'+ptLbl+'</span></span></div>'}];
         if(f.bonus&&mp[f.id]){var ok=resolved&&hasWinner&&correct&&mp[f.id]===res.method;chips.push({hit:!!ok,html:'<div><span class="ap-method-pill" style="background:'+(resolved?(ok?'#1c4532':'#742a2a'):bg)+';color:'+(resolved?(ok?'#68d391':'#fc8181'):col)+'">'+mlabel(mp[f.id])+'<span class="ap-method-pts">'+(resolved?(ok?'+'+getMethodPts(f,res.method,side)+'pt ✓':'0pt'):'+'+getMethodPts(f,mp[f.id],side)+'pt')+'</span></span></div>'});}
         if(f.glovesEnabled&&pr.gloves[f.id]){var gv=pr.gloves[f.id],okg=resolved&&res.gloves&&gv===res.gloves;chips.push({hit:!!okg,html:'<div><span class="ap-method-pill" style="background:'+(resolved?(okg?'#1c4532':'#742a2a'):bg)+';color:'+(resolved?(okg?'#68d391':'#fc8181'):col)+'">Gloves '+gv+'<span class="ap-method-pts">'+(resolved?(okg?'+'+getGlovePts(f,gv)+'pt ✓':'0pt'):'+'+getGlovePts(f,gv)+'pt')+'</span></span></div>'});}
@@ -15356,11 +15750,12 @@ setInterval(function(){renderTyping();refreshChatPresenceDots();},1500);
         if(f.overUnderEnabled&&currentPoolFeatureEnabled("allowOverUnder")&&pr.overs[f.id]){var ov=pr.overs[f.id],ouv=overUnderResultFromTiming(f,res&&res.timing),oko=resolved&&ouv&&ov===ouv;chips.push({hit:!!oko,html:'<div><span class="ap-method-pill" style="background:'+(resolved?(oko?'#1c4532':'#742a2a'):bg)+';color:'+(resolved?(oko?'#68d391':'#fc8181'):col)+'">'+(ov==='over'?'Over':'Under')+' '+getOverUnderLine(f)+'<span class="ap-method-pts">'+(resolved?(oko?'+'+getOverUnderPts(f,ov)+'pt ✓':'0pt'):'+'+getOverUnderPts(f,ov)+'pt')+'</span></span></div>'});}
         var validLock=validEntryLock(e);if(cardScoring.lockEnabled&&currentPoolFeatureEnabled("allowLockOfTheNight")&&validLock){var li=lockFightAndSide(validLock);if(li&&li.fight.id===f.id){var lockHit=resolved&&hasWinner&&res.winner===li.side;chips.push({hit:!!lockHit,html:lockPill(e,f,'all')});}}
         if(resolved)chips.sort(function(a,b){return (b.hit?1:0)-(a.hit?1:0);});
-        fightRows.push({score:running.total,index:entryIndex,html:'<div class="ap-row __AP_LEADER_CLASS__ profile-banner '+bannerClass(entryBanner(e))+'"><div><div class="ap-name">'+esc(e.name||'')+'</div>'+scoreHtml+'</div><div class="ap-right">'+chips.map(function(chip){return chip.html;}).join('')+'</div></div>'});
+        fightRows.push({score:running.total,hasProgress:running.hasProgress,index:entryIndex,html:'<div class="ap-row __AP_LEADER_CLASS__ profile-banner '+bannerClass(entryBanner(e))+'"><div><div class="ap-name">'+esc(e.name||'')+'</div>'+scoreHtml+'</div><div class="ap-right">'+chips.map(function(chip){return chip.html;}).join('')+'</div></div>'});
       });
-      var sortedRows=resolved?fightRows.sort(function(a,b){return b.score-a.score||a.index-b.index;}):fightRows;
-      var leadScore=resolved&&sortedRows.length?sortedRows[0].score:null;
-      var rows=sortedRows.map(function(row){return row.html.replace('__AP_LEADER_CLASS__',resolved&&row.score===leadScore?'all-picks-leader':'');}).join('');
+      var sortByScore=resolved||fightRows.some(function(row){return row.hasProgress;});
+      var sortedRows=sortByScore?fightRows.sort(function(a,b){return b.score-a.score||a.index-b.index;}):fightRows;
+      var leadScore=sortByScore&&sortedRows.length?sortedRows[0].score:null;
+      var rows=sortedRows.map(function(row){return row.html.replace('__AP_LEADER_CLASS__',sortByScore&&row.score===leadScore?'all-picks-leader':'');}).join('');
       html+='<div class="ap-block" id="apb_'+f.id+'"><div class="ap-header" onclick="document.getElementById(\'apb_'+f.id+'\').classList.toggle(\'open\')"><div><div class="ap-title">'+esc(ftitle(f))+'</div><div class="ap-split">'+esc(last(f.f1))+' '+f1c+' · '+esc(last(f.f2))+' '+f2c+'</div></div><div style="display:flex;align-items:center;gap:8px">'+stat+'<span class="ap-chevron">▼</span></div></div><div class="ap-body">'+rows+'</div></div>';
     });
     function allPicksFastestFinish(entry){
@@ -15945,7 +16340,7 @@ if(!firebaseDisabled)onAuthStateChanged(auth,async function(user){
     try{localStorage.removeItem(poolStorageKey('myDocId'));}catch(e){}
 	    renderMemberGate();
     var signedOutPoolHash=String(window.location.hash||"").replace(/^#/,"").toLowerCase();
-    var signedOutPoolTabIntent=!!({picks:1,leaderboard:1,mine:1,mypicks:1,"my-picks":1,allpicks:1,"all-picks":1,all:1,stats:1,scoring:1,pool:1,invite:1,chat:1,admin:1}[signedOutPoolHash]);
+    var signedOutPoolTabIntent=!!({picks:1,leaderboard:1,mine:1,mypicks:1,"my-picks":1,allpicks:1,"all-picks":1,all:1,stats:1,scoring:1,pool:1,invite:1,"join-pool":1,chat:1,admin:1}[signedOutPoolHash]);
     if(invitedPoolId&&signedOutPoolTabIntent){
       accountNeedsPoolChoice=true;
       markSetupPathReady(true);
@@ -16262,6 +16657,9 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
   var st25Preview=document.createElement('style');
   st25Preview.textContent='body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks #fights-main,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks #fights-prelim,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks #fights-early,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks #fights-custom{width:min(100%,720px)!important;max-width:720px!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card.title,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card:not(.title),body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card.fight-m1.title,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card.fight-m2.title{width:min(100%,720px)!important;max-width:720px!important;padding:18px 20px!important;margin-left:auto!important;margin-right:auto!important;min-height:0!important;height:auto!important;max-height:none!important;box-sizing:border-box!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card .fighters,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card.title .fighters{grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)!important;gap:10px!important;align-items:stretch!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card .fighter-btn,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card.title .fighter-btn,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card .fighter-btn[class*="sel-"],body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .fight-card.title .fighter-btn[class*="sel-"]{height:auto!important;min-height:118px!important;max-height:none!important;padding:14px 12px!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .method-grid,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .timing-grid,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .title-rounds{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .touch-grid,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .title-touch-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .prop-btn{min-height:58px!important;padding:10px!important;font-size:16px!important;line-height:1!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .bonus-section,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .pick-extra-section{margin-top:12px!important;padding:12px!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .bonus-label,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .pick-extra-label{font-size:18px!important;line-height:1!important;margin-bottom:7px!important}body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .bonus-note,body.embedded-readonly-preview:not(.phone-design-preview):not(.phone-preview-compact) #view-picks .pick-extra-note{width:min(100%,430px)!important;margin:6px auto 0!important;padding:4px 7px!important;font-size:11.5px!important;line-height:1.34!important}';
   document.head.appendChild(st25Preview);
+  var selectedTextGuard=document.createElement('style');
+  selectedTextGuard.textContent='#view-picks .fighter-btn.sel-fav .fighter-name,#view-picks .fighter-btn.sel-dog .fighter-name,#view-picks .fighter-btn.sel-big .fighter-name,#view-picks .fighter-btn.sel-fav .fighter-record,#view-picks .fighter-btn.sel-dog .fighter-record,#view-picks .fighter-btn.sel-big .fighter-record,#myInlineEditor.make-picks-clone .fighter-btn.sel-fav .fighter-name,#myInlineEditor.make-picks-clone .fighter-btn.sel-dog .fighter-name,#myInlineEditor.make-picks-clone .fighter-btn.sel-big .fighter-name,#myInlineEditor.make-picks-clone .fighter-btn.sel-fav .fighter-record,#myInlineEditor.make-picks-clone .fighter-btn.sel-dog .fighter-record,#myInlineEditor.make-picks-clone .fighter-btn.sel-big .fighter-record,.preview-real .fighter-btn.sel-fav .fighter-name,.preview-real .fighter-btn.sel-dog .fighter-name,.preview-real .fighter-btn.sel-big .fighter-name,.preview-real .fighter-btn.sel-fav .fighter-record,.preview-real .fighter-btn.sel-dog .fighter-record,.preview-real .fighter-btn.sel-big .fighter-record{color:#fff!important;-webkit-text-fill-color:#fff!important;background:transparent!important;text-shadow:0 2px 8px rgba(0,0,0,.92)!important}.fight-card.title .fighter-btn.sel-fav .fighter-name,.fight-card.title .fighter-btn.sel-dog .fighter-name,.fight-card.title .fighter-btn.sel-big .fighter-name,.fight-card.title .fighter-btn.sel-fav .fighter-record,.fight-card.title .fighter-btn.sel-dog .fighter-record,.fight-card.title .fighter-btn.sel-big .fighter-record,#view-picks .fight-card.title .fighter-btn.sel-fav .fighter-name,#view-picks .fight-card.title .fighter-btn.sel-dog .fighter-name,#view-picks .fight-card.title .fighter-btn.sel-big .fighter-name,#view-picks .fight-card.title .fighter-btn.sel-fav .fighter-record,#view-picks .fight-card.title .fighter-btn.sel-dog .fighter-record,#view-picks .fight-card.title .fighter-btn.sel-big .fighter-record,#myInlineEditor.make-picks-clone .fight-card.title .fighter-btn.sel-fav .fighter-name,#myInlineEditor.make-picks-clone .fight-card.title .fighter-btn.sel-dog .fighter-name,#myInlineEditor.make-picks-clone .fight-card.title .fighter-btn.sel-big .fighter-name,#myInlineEditor.make-picks-clone .fight-card.title .fighter-btn.sel-fav .fighter-record,#myInlineEditor.make-picks-clone .fight-card.title .fighter-btn.sel-dog .fighter-record,#myInlineEditor.make-picks-clone .fight-card.title .fighter-btn.sel-big .fighter-record{color:#fff!important;-webkit-text-fill-color:#fff!important;background:transparent!important;text-shadow:0 2px 8px rgba(0,0,0,.94)!important}#view-picks .fighter-btn.sel-fav .fighter-odds,#view-picks .fighter-btn.sel-dog .fighter-odds,#view-picks .fighter-btn.sel-big .fighter-odds,#myInlineEditor.make-picks-clone .fighter-btn.sel-fav .fighter-odds,#myInlineEditor.make-picks-clone .fighter-btn.sel-dog .fighter-odds,#myInlineEditor.make-picks-clone .fighter-btn.sel-big .fighter-odds,.preview-real .fighter-btn.sel-fav .fighter-odds,.preview-real .fighter-btn.sel-dog .fighter-odds,.preview-real .fighter-btn.sel-big .fighter-odds{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.90)!important}';
+  document.head.appendChild(selectedTextGuard);
 })();
 
 /* Final pick-state polish: readable long-shot odds, translucent edit mode, black pending All Picks chips. */
@@ -18628,7 +19026,7 @@ window.refreshFightResultsForViews=async function(){
       chips.push(lockLine(e,f));
       var result=res?'<div class="my-result-line">'+resultHeaderHtml(f,r,won)+(special?'<span class="my-result-method">'+esc(specialResultPointsText(f,r))+'</span>':((typeof fightResultDisplayHtml==="function")?fightResultDisplayHtml(f,r):''))+'</div>':"";
       var fp=res?(perFight[f.id]||0):0, total=res?(runningTotals[f.id]||0):0, fullPts=res&&hasWinner&&won?getWinPts(f,side)+(f.bonus?getMethodPts(f,r.method,side):0)+(f.timingEnabled?getTimingPts(f,r.timing):0)+(f.overUnderEnabled?getOverUnderPts(f,overUnderResultFromTiming(f,r.timing)):0):0, resultSummary=res&&hasWinner?' · Result: '+last(r.winner===1?f.f1:f.f2)+' '+(r.method?methodLabel(r.method):'')+(r.timing?' '+timingLabel(r.timing):''):'', pickStatus=res&&hasWinner&&!won?' · MISS':(res&&hasWinner&&won&&fp<fullPts?resultSummary:'');
-      var scoreLine=res?'<div class="fight-score-line"><span class="fight-score-pill '+(fp>0?"hit":"miss")+'">This fight '+(fp>=0?"+":"")+fp+' PT</span><span class="fight-score-pill '+(total===0?"zero":"")+'">Total '+total+' PT'+(total===1?"":"S")+'</span></div>':"";
+      var scoreLine="";
       var row='<div class="my-row"><div class="my-fight-wrap"><span class="my-fight">'+esc(title(f))+'</span>'+result+scoreLine+'</div><div class="my-right">'+chips.join("")+'</div></div>';
       var runningPill=res?'<span class="my-running-pill '+(total===0?"zero":"")+'">'+total+' PT'+(total===1?"":"S")+'</span>':"";
       var pickChoiceStyle=res?(special?' style="background:linear-gradient(180deg,rgba(45,55,72,.94),rgba(15,23,42,.90));border-color:rgba(246,212,107,.44);color:#f6d46b;-webkit-text-fill-color:#f6d46b"':(won?' style="background:linear-gradient(180deg,rgba(28,69,50,.94),rgba(7,43,26,.90));border-color:rgba(104,211,145,.58);color:#68d391;-webkit-text-fill-color:#68d391"':' style="background:linear-gradient(180deg,rgba(127,29,29,.90),rgba(69,10,20,.86));border-color:rgba(252,129,129,.62);color:#fca5a5;-webkit-text-fill-color:#fca5a5"')):'';
@@ -19424,11 +19822,12 @@ window.refreshFightResultsForViews=async function(){
   function ensureFreeStarterUpgradeVisibility(){
     ensureLockedAdminHeaders();
     enforceMakePicksPlanLocks();
-    upsertMakePicksUpgradeCallout();
+    if(typeof window.renderMakePicksUpgradeSlot==="function")window.renderMakePicksUpgradeSlot();
     removeById("freeUpgradeAdminTop");
     removeById("freeUpgradeScoringKey");
     removeById("freeUpgradeProfile");
     removeById("freeUpgradeStats");
+    [].slice.call(document.querySelectorAll(".free-upgrade-callout,.make-picks-upgrade-callout")).forEach(function(el){el.remove();});
   }
   // Fastest Finish is now a standard Free Starter feature; canonical handlers are defined in the final Make Your Picks authority.
   ["renderFights","refreshPickUI","renderMySummary","renderAllPicks","renderPoolShell","renderKnownPools","renderMyPoolsView","showTab"].forEach(function(name){
@@ -19682,6 +20081,18 @@ window.refreshFightResultsForViews=async function(){
       if(typeof window.updateProgress==="function")window.updateProgress();
       return;
     }
+    var missing=typeof missingPickMessage==="function"?missingPickMessage({allowMissingLock:true}):"";
+    if(missing){
+      writeFastestFeedback(missing,true);
+      var submitMsg=ensureSubmitMessageTarget();
+      if(submitMsg){
+        submitMsg.classList.remove("submit-msg-saved");
+        submitMsg.classList.add("submit-msg-error");
+        submitMsg.textContent=missing;
+      }
+      if(typeof window.updateProgress==="function")window.updateProgress();
+      return;
+    }
     var normalButtonLabel=fastestTieButtonLabel();
     if(btn){btn.disabled=true;btn.textContent="Saving...";}
     saveFeedbackDebug("fastest-save-start",{tie:tie});
@@ -19755,7 +20166,7 @@ window.refreshFightResultsForViews=async function(){
     if(overFights.some(function(f){return !overs[f.id];}))missing.push("Over/Under");
     if(!opts.allowMissingLock&&cardScoring.lockEnabled&&currentPoolFeatureEnabled("allowLockOfTheNight")&&!(normalizeLockValue(lockPick)&&lockEligibility(lockPick).valid))missing.push("Lock of the Night");
     if(!readFastestTie())missing.push("Fastest Finish Tiebreaker");
-    return missing.length?"Finish your "+missing.join(", ")+" before locking in picks.":"";
+    return missing.length?"Finish your "+missing.join(", ")+" before tapping Lock In Picks.":"";
   }
   window.missingPickMessage=missingPickMessage;
   window.missingPicksMessage=missingPickMessage;
@@ -19855,8 +20266,17 @@ window.refreshFightResultsForViews=async function(){
     if(currentUser&&!isPoolAdmin()&&!currentPoolMemberApproved){renderMemberGate();setMemberMessage("Join this pool with the passcode before saving picks.",true);window.scrollTo({top:0,behavior:"smooth"});return;}
     if(isLocked()){publicLockNotice();return;}
     var missing=missingPickMessage(opts);
-    if(missing){msg=ensureSubmitMessageTarget();if(msg)msg.textContent=missing;return;}
+    if(missing){
+      msg=ensureSubmitMessageTarget();
+      if(msg){
+        msg.classList.remove("submit-msg-saved");
+        msg.classList.add("submit-msg-error");
+        msg.textContent=missing;
+      }
+      return;
+    }
     var openState=captureMakePicksOpenState();
+    if(msg)msg.classList.remove("submit-msg-error");
     if(btn){btn.disabled=true;btn.textContent="Saving...";}
     saveFeedbackDebug("submit-picks-start",{messageTarget:!!msg});
     try{
@@ -19882,11 +20302,11 @@ window.refreshFightResultsForViews=async function(){
     }catch(error){
       console.error(error);
       msg=ensureSubmitMessageTarget();
-      if(msg){msg.classList.remove("submit-msg-saved");msg.textContent=pickSaveFailureText(error);}
+      if(msg){msg.classList.remove("submit-msg-saved");msg.classList.add("submit-msg-error");msg.textContent=pickSaveFailureText(error);}
       [0,250,1000].forEach(function(delay){
         setTimeout(function(){
           var retryMsg=ensureSubmitMessageTarget();
-          if(retryMsg){retryMsg.classList.remove("submit-msg-saved");retryMsg.textContent=pickSaveFailureText(error);}
+          if(retryMsg){retryMsg.classList.remove("submit-msg-saved");retryMsg.classList.add("submit-msg-error");retryMsg.textContent=pickSaveFailureText(error);}
         },delay);
       });
       if(btn){btn.disabled=false;btn.textContent=(window.myDocId||window.myEntry&&window.myEntry.docId)?"Update Picks":"Lock In Picks";}
@@ -19938,7 +20358,7 @@ window.refreshFightResultsForViews=async function(){
   style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible{padding:0!important;margin:0 0 12px!important;overflow:hidden!important;border-radius:15px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle{appearance:none;-webkit-appearance:none;width:100%;display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;padding:12px;border:0;border-radius:15px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.36)),transparent;color:#fff;-webkit-text-fill-color:#fff;font-family:"Bebas Neue",Impact,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle-main{display:grid;gap:4px;min-width:0}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle-kicker{font-size:11px;line-height:1;color:#f6d46b;-webkit-text-fill-color:#f6d46b;letter-spacing:.10em}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle-title{font-size:20px;line-height:1;color:#fff;-webkit-text-fill-color:#fff;text-shadow:0 2px 9px rgba(0,0,0,.9)}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle-sub{font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:900;letter-spacing:.02em;line-height:1.2;color:#cbd5e1;-webkit-text-fill-color:#cbd5e1;text-transform:none}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle-state{display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:28px;border-radius:999px;border:1px solid rgba(226,232,240,.24);background:rgba(0,0,0,.46);font-size:12px;color:#f6d46b;-webkit-text-fill-color:#f6d46b}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible:not(.phone-special-open)>:not(.phone-special-toggle){display:none!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open{padding-bottom:10px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open .phone-special-toggle{border-bottom:1px solid rgba(226,232,240,.14);border-radius:15px 15px 0 0}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.lock-title,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.lock-note,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.lock-grid,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-title,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-copy,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-form,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-help,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-example,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-save,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-summary,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-saved-msg,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-error{margin-left:10px!important;margin-right:10px!important;width:auto!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.lock-title,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.lock-note,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible.phone-special-open>.fastest-tie-title{display:none!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-lock.phone-special-open>.lock-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;margin-top:8px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn,body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard .fastest-round-btn,body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard .fastest-round-btn input,body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard #fastestFinishMark{pointer-events:auto!important;cursor:pointer!important;opacity:1!important}body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard #fastestFinishMark{cursor:text!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-tie-help,body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-tie-example{display:none!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-tie-form{grid-template-columns:1fr!important;gap:8px!important;margin:8px 10px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-round-buttons{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-round-btn{min-height:36px!important;padding:6px!important;border-radius:9px!important;font-size:12px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-tie-field input{min-height:38px!important;border-radius:10px!important;font-size:14px!important;padding:8px!important}';
   style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.locked-choice,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.locked-choice,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.locked-choice,body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-round-btn{pointer-events:none!important;touch-action:pan-y!important;cursor:default!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-fight-toggle,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-toggle,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-native-summary,body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-card summary{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible .lock-btn,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible .fastest-round-btn,body.embedded-readonly-preview.phone-design-preview #view-picks .phone-special-collapsible #fastestFinishMark{pointer-events:none!important;cursor:default!important}body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard .fastest-round-btn input{display:none!important}body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard .fastest-round-btn{opacity:1!important}body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard .fastest-round-btn:not(.active){opacity:.58!important}body.embedded-readonly-preview.phone-design-preview #view-picks #fastestFinishTieCard .phone-fastest-label{display:block!important;width:100%!important;text-align:center!important}';
   style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active,body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-round-btn.active{background-image:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08) 30%,rgba(0,0,0,.34) 100%),linear-gradient(180deg,rgba(18,24,34,.96),rgba(5,7,12,.98)),linear-gradient(180deg,#f8fafc 0%,#aeb7c2 45%,#eef2f7 64%,#697381 100%)!important;background-size:auto,118% auto,auto!important;background-position:center center,center center,center center!important;background-repeat:no-repeat!important;border:2px solid rgba(255,255,255,.96)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.90)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.48),inset 0 -2px 0 rgba(15,23,42,.24),0 0 0 1px rgba(148,163,184,.80),0 10px 22px rgba(0,0,0,.34),0 0 18px rgba(226,232,240,.22)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-fav *,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-dog *,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-big *,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active *,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active *,body.embedded-readonly-preview.phone-design-preview #view-picks .fastest-round-btn.active *{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.90)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-fav .fighter-odds,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-dog .fighter-odds,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-big .fighter-odds,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-fav .fighter-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-dog .fighter-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn.sel-big .fighter-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active .lock-pts{background:rgba(7,17,31,.42)!important;border:1px solid rgba(255,255,255,.24)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.88)!important}';
-  style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active:not(.prop-value-3) .prop-pts{background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-color:transparent!important;border:1px solid rgba(226,232,240,.34)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.dog,body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.big,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-3 .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-3 .prop-pts{background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-color:transparent!important;border:1px solid rgba(255,118,118,.62)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.gold,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active .lock-pts{background:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-image:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-color:transparent!important;border:1px solid rgba(255,236,168,.78)!important;color:#111827!important;-webkit-text-fill-color:#111827!important;text-shadow:0 1px 0 rgba(255,255,255,.58)!important}';
+  style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.fav,body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active:not(.prop-value-3) .prop-pts{background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-color:transparent!important;border:1px solid rgba(226,232,240,.34)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.big,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-3 .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-3 .prop-pts{background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-color:transparent!important;border:1px solid rgba(255,118,118,.62)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.gold,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active .lock-pts{background:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-image:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-color:transparent!important;border:1px solid rgba(255,236,168,.78)!important;color:#111827!important;-webkit-text-fill-color:#111827!important;text-shadow:0 1px 0 rgba(255,255,255,.58)!important}';
   style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-card[open]{padding:8px!important;border-radius:13px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-card[open] .scoring-key-head{margin-bottom:6px!important;align-items:center!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-categories{gap:6px!important;margin-bottom:6px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-category{grid-template-columns:minmax(72px,.36fr) minmax(0,1fr)!important;align-items:start!important;gap:6px!important;padding:6px!important;border-radius:10px!important;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012)),rgba(2,6,12,.48)!important;border-color:rgba(226,232,240,.16)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-category-name{font-size:11px!important;line-height:1.02!important;color:#f6d46b!important;-webkit-text-fill-color:#f6d46b!important;text-align:left!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-category-picks{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;justify-content:stretch!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-chip{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:4px!important;min-width:0!important;min-height:27px!important;padding:4px 5px 4px 7px!important;border-radius:9px!important;font-size:9px!important;line-height:1!important;white-space:normal!important;text-align:left!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-chip .scoring-key-pill{flex:0 0 auto!important;min-width:34px!important;margin:0!important;padding:3px 5px!important;font-size:9px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-note{padding-top:5px!important;font-size:8px!important;line-height:1.18!important;letter-spacing:0!important}';
   style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .make-picks-intro{display:none!important}';
   style.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible{padding:0!important;overflow:hidden!important}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-toggle{appearance:none;-webkit-appearance:none;width:100%;display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;padding:12px;border:0;border-radius:15px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.36)),transparent;color:#fff;-webkit-text-fill-color:#fff;font-family:"Bebas Neue",Impact,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-toggle-main{display:grid;gap:4px;min-width:0}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-toggle-kicker{font-size:11px;line-height:1;color:#f6d46b;-webkit-text-fill-color:#f6d46b;letter-spacing:.10em}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-toggle-title{font-size:20px;line-height:1;color:#fff;-webkit-text-fill-color:#fff;white-space:normal;overflow-wrap:anywhere;text-shadow:0 2px 9px rgba(0,0,0,.9)}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-toggle-sub{font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:900;letter-spacing:.02em;line-height:1.2;color:#cbd5e1;-webkit-text-fill-color:#cbd5e1;text-transform:none}body.embedded-readonly-preview.phone-design-preview #view-picks .phone-pool-toggle-state{display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:28px;border-radius:999px;border:1px solid rgba(226,232,240,.24);background:rgba(0,0,0,.46);font-size:12px;color:#f6d46b;-webkit-text-fill-color:#f6d46b}body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible:not(.phone-pool-open)>:not(.phone-pool-toggle){display:none!important}body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible.phone-pool-open{padding-bottom:10px!important}body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible.phone-pool-open .phone-pool-toggle{border-bottom:1px solid rgba(226,232,240,.14);border-radius:15px 15px 0 0}body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible.phone-pool-open>.current-pool-main,body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible.phone-pool-open>.current-pool-strip-meta{margin-left:10px!important;margin-right:10px!important;width:auto!important}body.embedded-readonly-preview.phone-design-preview #view-picks .current-pool-strip.phone-pool-collapsible.phone-pool-open>.current-pool-main{display:none!important}';
@@ -20024,8 +20444,8 @@ window.refreshFightResultsForViews=async function(){
     if(!bubbleStyle){
       bubbleStyle=document.createElement("style");
       bubbleStyle.id="phonePreviewBubbleColors";
-      bubbleStyle.textContent='body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active:not(.prop-value-3) .prop-pts{background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-color:transparent!important;border:1px solid rgba(226,232,240,.34)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.dog,body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.big,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-3 .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-3 .prop-pts{background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-color:transparent!important;border:1px solid rgba(255,118,118,.62)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.gold,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active .lock-pts{background:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-image:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-color:transparent!important;border:1px solid rgba(255,236,168,.78)!important;color:#111827!important;-webkit-text-fill-color:#111827!important;text-shadow:0 1px 0 rgba(255,255,255,.58)!important}';
-      bubbleStyle.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .fight-card .fighter-btn.sel-dog .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fight-card.title .fighter-btn.sel-dog .fighter-pts.pts-dog{background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-color:transparent!important;border:1px solid rgba(255,118,118,.62)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important}';
+      bubbleStyle.textContent='body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.fav,body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-fav,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active:not(.prop-value-3) .prop-pts{background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-color:transparent!important;border:1px solid rgba(226,232,240,.34)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.big,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-value-3 .prop-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .fighter-btn[class*="sel-"] .fighter-pts.pts-big,body.embedded-readonly-preview.phone-design-preview #view-picks .prop-btn.active.prop-value-3 .prop-pts{background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-color:transparent!important;border:1px solid rgba(255,118,118,.62)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important}body.embedded-readonly-preview.phone-design-preview #view-picks .scoring-key-pill.gold,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-btn.active .lock-pts{background:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-image:linear-gradient(180deg,#fff2a8 0%,#d69e2e 42%,#7c430b 100%)!important;background-color:transparent!important;border:1px solid rgba(255,236,168,.78)!important;color:#111827!important;-webkit-text-fill-color:#111827!important;text-shadow:0 1px 0 rgba(255,255,255,.58)!important}';
+      bubbleStyle.textContent+='body.embedded-readonly-preview.phone-design-preview #view-picks .fight-card .fighter-btn.sel-dog .fighter-pts.pts-dog,body.embedded-readonly-preview.phone-design-preview #view-picks .fight-card.title .fighter-btn.sel-dog .fighter-pts.pts-dog{background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-color:transparent!important;border:1px solid rgba(226,232,240,.34)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important}';
     }
     document.head.appendChild(bubbleStyle);
     var black="linear-gradient(180deg,#121823 0%,#05070c 100%)";
@@ -20037,7 +20457,13 @@ window.refreshFightResultsForViews=async function(){
       el.style.setProperty("color","#fff","important");
       el.style.setProperty("-webkit-text-fill-color","#fff","important");
     });
-    document.querySelectorAll("#view-picks .scoring-key-pill.dog,#view-picks .scoring-key-pill.big,#view-picks .fighter-pts.pts-dog,#view-picks .fighter-pts.pts-big,#view-picks .prop-value-3 .prop-pts").forEach(function(el){
+    document.querySelectorAll("#view-picks .scoring-key-pill.dog,#view-picks .fighter-pts.pts-dog").forEach(function(el){
+      el.style.setProperty("background",black,"important");
+      el.style.setProperty("background-image",black,"important");
+      el.style.setProperty("color","#fff","important");
+      el.style.setProperty("-webkit-text-fill-color","#fff","important");
+    });
+    document.querySelectorAll("#view-picks .scoring-key-pill.big,#view-picks .fighter-pts.pts-big,#view-picks .prop-value-3 .prop-pts").forEach(function(el){
       el.style.setProperty("background",red,"important");
       el.style.setProperty("background-image",red,"important");
       el.style.setProperty("color","#fff","important");
@@ -20329,11 +20755,30 @@ window.refreshFightResultsForViews=async function(){
   function installInstantPreviewAccordions(){
     if(!isPhonePreview()||document.body.dataset.instantPreviewAccordions==="1")return;
     document.body.dataset.instantPreviewAccordions="1";
-    document.addEventListener("pointerdown",function(event){
+    var tapState=null;
+    function accordionTarget(event){
       if(!isPhonePreview())return;
       var summary=event.target&&event.target.closest&&event.target.closest("#view-mine .my-pick-detail>summary");
-      if(summary){
-        var detail=summary.parentElement;
+      if(summary)return {type:"my",el:summary};
+      var header=event.target&&event.target.closest&&event.target.closest("#view-allpicks .ap-header");
+      if(header)return {type:"all",el:header};
+      return null;
+    }
+    document.addEventListener("pointerdown",function(event){
+      var target=accordionTarget(event);
+      if(!target)return;
+      tapState={target:target.el,type:target.type,x:event.clientX,y:event.clientY,moved:false};
+    },true);
+    document.addEventListener("pointermove",function(event){
+      if(!tapState)return;
+      if(Math.abs(event.clientX-tapState.x)>10||Math.abs(event.clientY-tapState.y)>10)tapState.moved=true;
+    },true);
+    document.addEventListener("pointerup",function(event){
+      var state=tapState, target=accordionTarget(event);
+      tapState=null;
+      if(!state||state.moved||!target||target.el!==state.target)return;
+      if(state.type==="my"){
+        var detail=state.target.parentElement;
         if(detail&&detail.tagName==="DETAILS"){
           detail.open=!detail.open;
           event.preventDefault();
@@ -20341,15 +20786,19 @@ window.refreshFightResultsForViews=async function(){
         }
         return;
       }
-      var header=event.target&&event.target.closest&&event.target.closest("#view-allpicks .ap-header");
-      if(header){
-        var block=header.closest(".ap-block");
+      if(state.type==="all"){
+        var block=state.target.closest(".ap-block");
         if(block){
           block.classList.toggle("open");
           event.preventDefault();
           event.stopPropagation();
         }
       }
+    },true);
+    document.addEventListener("click",function(event){
+      if(!accordionTarget(event))return;
+      event.preventDefault();
+      event.stopPropagation();
     },true);
   }
   function run(){
@@ -20360,6 +20809,55 @@ window.refreshFightResultsForViews=async function(){
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run);
   [0,250,700,1300,2300,3800,5600,7200].forEach(function(delay){setTimeout(run,delay);});
   window.addEventListener("hashchange",function(){setTimeout(run,60);setTimeout(run,500);});
+})();
+
+(function(){
+  function shouldUseTapSafeAccordions(){
+    try{
+      return !!(window.matchMedia&&window.matchMedia("(pointer: coarse)").matches)||window.innerWidth<=760||!!(document.body&&document.body.classList.contains("phone-design-preview"));
+    }catch(e){return window.innerWidth<=760;}
+  }
+  function accordionTarget(event){
+    var target=event.target&&event.target.closest&&event.target.closest("#view-mine .my-pick-detail>summary,#view-allpicks .ap-header");
+    if(!target)return null;
+    return target.matches("#view-mine .my-pick-detail>summary")?{type:"my",el:target}:{type:"all",el:target};
+  }
+  function installTapSafeAccordions(){
+    if(!shouldUseTapSafeAccordions()||!document.body||document.body.dataset.instantPreviewAccordions==="1")return;
+    document.body.dataset.instantPreviewAccordions="1";
+    var tapState=null;
+    document.addEventListener("pointerdown",function(event){
+      var target=accordionTarget(event);
+      if(!target)return;
+      tapState={target:target.el,type:target.type,x:event.clientX,y:event.clientY,moved:false};
+    },true);
+    document.addEventListener("pointermove",function(event){
+      if(!tapState)return;
+      if(Math.abs(event.clientX-tapState.x)>10||Math.abs(event.clientY-tapState.y)>10)tapState.moved=true;
+    },true);
+    document.addEventListener("pointerup",function(event){
+      var state=tapState, target=accordionTarget(event);
+      tapState=null;
+      if(!state||state.moved||!target||target.el!==state.target)return;
+      if(state.type==="my"){
+        var detail=state.target.parentElement;
+        if(detail&&detail.tagName==="DETAILS")detail.open=!detail.open;
+      }else{
+        var block=state.target.closest(".ap-block");
+        if(block)block.classList.toggle("open");
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    },true);
+    document.addEventListener("click",function(event){
+      if(!accordionTarget(event))return;
+      event.preventDefault();
+      event.stopPropagation();
+    },true);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installTapSafeAccordions);
+  else installTapSafeAccordions();
+  window.addEventListener("resize",function(){setTimeout(installTapSafeAccordions,100);});
 })();
 /* UFC 328 phone preview cleanup: hide internal preview labeling without changing the pick-card layout. */
 (function(){
@@ -20596,6 +21094,27 @@ window.refreshFightResultsForViews=async function(){
 	    setTimeout(bindChild,0);
 	    setTimeout(bindChild,700);
 	  }
+  function installDeviceFrameReadabilityGuard(frame){
+    if(!frame)return;
+    function applyGuard(){
+      try{
+        var win=frame.contentWindow;
+        var doc=frame.contentDocument||(win&&win.document);
+        if(!win||!doc||!doc.head)return;
+        var style=doc.getElementById("fightLocksLocalDeviceReadabilityGuard");
+        if(!style){
+          style=doc.createElement("style");
+          style.id="fightLocksLocalDeviceReadabilityGuard";
+          doc.head.appendChild(style);
+        }
+        style.textContent='html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview),html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .tabs,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .pool-shell,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) .view.active,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks{opacity:1!important;filter:none!important;mix-blend-mode:normal!important}html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview)::before,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview)::after{content:none!important;display:none!important;opacity:0!important;background:none!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fight-card,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fighter-btn,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .prop-btn,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .lock-card,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fastest-tie-card{opacity:1!important;filter:none!important;mix-blend-mode:normal!important}html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks h1,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks h2,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks h3,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fighter-name,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .fighter-record,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .prop-btn,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .current-pool-strip,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .make-picks-intro,html.local-device-frame.local-device-pool-frame body:not(.embedded-readonly-preview) #view-picks .scoring-key-card{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.92)!important}';
+      }catch(e){}
+    }
+    frame.addEventListener("load",function(){
+      [0,120,500,1200,2600].forEach(function(delay){setTimeout(applyGuard,delay);});
+    });
+    [0,500,1400,3000].forEach(function(delay){setTimeout(applyGuard,delay);});
+  }
 	  function ensureDeviceFrame(chosen){
 	    if(chosen.id==="laptop"){
 	      stage.textContent="";
@@ -20617,6 +21136,7 @@ window.refreshFightResultsForViews=async function(){
 		    var src=previewFrameSrc(chosen);
 	    if(frame.getAttribute("src")!==src)frame.setAttribute("src",src);
 	    installDeviceFrameScrollBridge(shell,frame);
+	    installDeviceFrameReadabilityGuard(frame);
 	  }
   function applyDevice(nextMode,updateUrl){
     mode=nextMode;
@@ -20764,4 +21284,72 @@ window.refreshFightResultsForViews=async function(){
   }
   window.debugFightLocksActivePaths=debugFightLocksActivePaths;
   setTimeout(function(){debugFightLocksActivePaths("after load");},1200);
+})();
+/* Final launch guard: 1pt and 2pt bubbles stay black after every polish pass. */
+(function(){
+  function installOneTwoPointBubbleGuard(){
+    var style=document.getElementById("oneTwoPointBubbleColorGuard");
+    if(!style){
+      style=document.createElement("style");
+      style.id="oneTwoPointBubbleColorGuard";
+      style.textContent=[
+        '.fighter-pts.pts-fav,#view-picks .fighter-pts.pts-fav,#myInlineEditor.make-picks-clone .fighter-pts.pts-fav,.preview-real .fighter-pts.pts-fav,.setup-preview .preview-real .fighter-pts.pts-fav,.prop-value-1 .prop-pts,.prop-value-2 .prop-pts,.prop-btn.prop-value-1 .prop-pts,.prop-btn.prop-value-2 .prop-pts,.prop-btn.prop-value-1.active .prop-pts,.prop-btn.prop-value-2.active .prop-pts,.fight-card .prop-value-1 .prop-pts,.fight-card .prop-value-2 .prop-pts,.fight-card .prop-btn.prop-value-1 .prop-pts,.fight-card .prop-btn.prop-value-2 .prop-pts,#view-picks .prop-value-1 .prop-pts,#view-picks .prop-value-2 .prop-pts,#view-picks .prop-btn.prop-value-1 .prop-pts,#view-picks .prop-btn.prop-value-2 .prop-pts,#view-picks .prop-btn.prop-value-1.active .prop-pts,#view-picks .prop-btn.prop-value-2.active .prop-pts,#myInlineEditor.make-picks-clone .prop-value-1 .prop-pts,#myInlineEditor.make-picks-clone .prop-value-2 .prop-pts,.preview-real .prop-value-1 .prop-pts,.preview-real .prop-value-2 .prop-pts,.setup-preview .preview-real .prop-value-1 .prop-pts,.setup-preview .preview-real .prop-value-2 .prop-pts{background:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-image:linear-gradient(180deg,#121823 0%,#05070c 100%)!important;background-color:transparent!important;border:1px solid rgba(226,232,240,.34)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 12px rgba(0,0,0,.32)!important}',
+        '.prop-value-3 .prop-pts,.prop-btn.prop-value-3 .prop-pts,.prop-btn.prop-value-3.active .prop-pts,.fight-card .prop-value-3 .prop-pts,.fight-card .prop-btn.prop-value-3 .prop-pts,#view-picks .prop-value-3 .prop-pts,#view-picks .prop-btn.prop-value-3 .prop-pts,#view-picks .prop-btn.prop-value-3.active .prop-pts{background:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-image:linear-gradient(180deg,#a83a3d 0%,#8e2f34 46%,#5f1d24 100%)!important;background-color:transparent!important;border:1px solid rgba(255,118,118,.62)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 7px rgba(0,0,0,.86)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 6px 12px rgba(0,0,0,.32)!important}'
+      ].join('');
+    }
+    document.head.appendChild(style);
+    document.querySelectorAll(".fighter-pts.pts-fav,#view-picks .fighter-pts.pts-fav,#myInlineEditor.make-picks-clone .fighter-pts.pts-fav,.prop-value-1 .prop-pts,.prop-value-2 .prop-pts,.prop-btn.prop-value-1 .prop-pts,.prop-btn.prop-value-2 .prop-pts").forEach(function(el){
+      var black="linear-gradient(180deg,#121823 0%,#05070c 100%)";
+      el.style.setProperty("background",black,"important");
+      el.style.setProperty("background-image",black,"important");
+      el.style.setProperty("background-color","transparent","important");
+      el.style.setProperty("border","1px solid rgba(226,232,240,.34)","important");
+      el.style.setProperty("color","#fff","important");
+      el.style.setProperty("-webkit-text-fill-color","#fff","important");
+    });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installOneTwoPointBubbleGuard,{once:true});
+  else installOneTwoPointBubbleGuard();
+  [250,700,1400,2600,4200].forEach(function(delay){setTimeout(installOneTwoPointBubbleGuard,delay);});
+  window.addEventListener("hashchange",function(){setTimeout(installOneTwoPointBubbleGuard,80);});
+})();
+/* Final launch guard: phone pool nav only outlines the current tab. */
+(function(){
+  function installPhonePoolNavSelectionGuard(){
+    var style=document.getElementById("phonePoolNavSelectionGuard");
+    if(!style){
+      style=document.createElement("style");
+      style.id="phonePoolNavSelectionGuard";
+      style.textContent='body.embedded-readonly-preview.phone-preview-compact .belt-main-tab,body.embedded-readonly-preview.phone-design-preview .belt-main-tab,html.local-device-preview-active .belt-main-tab{border-color:transparent!important;outline:none!important;box-shadow:none!important}body.embedded-readonly-preview.phone-preview-compact .belt-main-tab.active,body.embedded-readonly-preview.phone-design-preview .belt-main-tab.active,html.local-device-preview-active .belt-main-tab.active,html.local-device-preview-active .belt-tools .tab.active{border:2px solid rgba(255,255,255,.92)!important;outline:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(239,68,68,.18)!important}';
+    }
+    document.head.appendChild(style);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installPhonePoolNavSelectionGuard,{once:true});
+  else installPhonePoolNavSelectionGuard();
+  [250,700,1400,2600,4200].forEach(function(delay){setTimeout(installPhonePoolNavSelectionGuard,delay);});
+  window.addEventListener("hashchange",function(){setTimeout(installPhonePoolNavSelectionGuard,80);});
+})();
+/* Final launch guard: selected fighter labels stay readable after every polish pass. */
+(function(){
+  function installSelectedFighterTextGuard(){
+    var style=document.getElementById("selectedFighterTextReadabilityGuard");
+    if(!style){
+      style=document.createElement("style");
+      style.id="selectedFighterTextReadabilityGuard";
+      style.textContent='#view-picks .fight-card .fighter-btn.sel-fav .fighter-name,#view-picks .fight-card .fighter-btn.sel-dog .fighter-name,#view-picks .fight-card .fighter-btn.sel-big .fighter-name,#view-picks .fight-card .fighter-btn.sel-fav .fighter-record,#view-picks .fight-card .fighter-btn.sel-dog .fighter-record,#view-picks .fight-card .fighter-btn.sel-big .fighter-record,#view-picks .pick-fight-detail .fighter-btn.sel-fav .fighter-name,#view-picks .pick-fight-detail .fighter-btn.sel-dog .fighter-name,#view-picks .pick-fight-detail .fighter-btn.sel-big .fighter-name,#view-picks .pick-fight-detail .fighter-btn.sel-fav .fighter-record,#view-picks .pick-fight-detail .fighter-btn.sel-dog .fighter-record,#view-picks .pick-fight-detail .fighter-btn.sel-big .fighter-record,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-fav .fighter-name,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-dog .fighter-name,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-big .fighter-name,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-fav .fighter-record,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-dog .fighter-record,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-big .fighter-record{color:#fff!important;-webkit-text-fill-color:#fff!important;background:transparent!important;background-image:none!important;text-shadow:0 2px 8px rgba(0,0,0,.94)!important;box-shadow:none!important}#view-picks .fight-card .fighter-btn.sel-fav .fighter-odds,#view-picks .fight-card .fighter-btn.sel-dog .fighter-odds,#view-picks .fight-card .fighter-btn.sel-big .fighter-odds,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-fav .fighter-odds,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-dog .fighter-odds,#myInlineEditor.make-picks-clone .fight-card .fighter-btn.sel-big .fighter-odds{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.90)!important}';
+    }
+    document.head.appendChild(style);
+    document.querySelectorAll("#view-picks .fighter-btn[class*='sel-'] .fighter-name,#view-picks .fighter-btn[class*='sel-'] .fighter-record,#myInlineEditor.make-picks-clone .fighter-btn[class*='sel-'] .fighter-name,#myInlineEditor.make-picks-clone .fighter-btn[class*='sel-'] .fighter-record").forEach(function(el){
+      el.style.setProperty("color","#fff","important");
+      el.style.setProperty("-webkit-text-fill-color","#fff","important");
+      el.style.setProperty("background","transparent","important");
+      el.style.setProperty("background-image","none","important");
+      el.style.setProperty("text-shadow","0 2px 8px rgba(0,0,0,.94)","important");
+      el.style.setProperty("box-shadow","none","important");
+    });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installSelectedFighterTextGuard,{once:true});
+  else installSelectedFighterTextGuard();
+  [250,700,1400,2600,4200].forEach(function(delay){setTimeout(installSelectedFighterTextGuard,delay);});
+  window.addEventListener("hashchange",function(){setTimeout(installSelectedFighterTextGuard,80);});
 })();
