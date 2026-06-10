@@ -16842,16 +16842,42 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
 	      if(typeof window.insertPotentialTiebreakerBoard==="function")window.insertPotentialTiebreakerBoard();
 	    }catch(e){}
 	  };
+  var allPicksTapState=null;
+  function allPicksHeadFromEvent(e){
+    var target=e.target;
+    var head=target&&target.closest?target.closest('#allPicksContent .ap-header-fixed,#allPicksContent .ap-header'):null;
+    if(!head&&typeof e.clientX==='number')head=allPicksHeaderAtPoint(e.clientX,e.clientY);
+    return head||null;
+  }
   document.addEventListener('pointerdown',function(e){
-    if(!((e.target&&e.target.closest&&e.target.closest('.ap-header-fixed'))||allPicksHeaderAtPoint(e.clientX,e.clientY)))return;
-    if(toggleAllPicksFromEvent(e)){
-      window.__lastAllPicksPointerToggle=Date.now();
-    }
-    e.preventDefault();
-    e.stopImmediatePropagation();
+    var head=allPicksHeadFromEvent(e);
+    if(!head)return;
+    allPicksTapState={head:head,x:e.clientX,y:e.clientY,moved:false};
   },true);
+  document.addEventListener('pointermove',function(e){
+    if(!allPicksTapState)return;
+    if(Math.abs(e.clientX-allPicksTapState.x)>10||Math.abs(e.clientY-allPicksTapState.y)>10)allPicksTapState.moved=true;
+  },true);
+  document.addEventListener('pointerup',function(e){
+    var state=allPicksTapState;
+    allPicksTapState=null;
+    if(!state)return;
+    var head=allPicksHeadFromEvent(e)||state.head;
+    if(state.moved||head!==state.head){
+      window.__lastAllPicksPointerToggle=Date.now();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if(toggleAllPicksHeader(state.head)){
+      window.__lastAllPicksPointerToggle=Date.now();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  },true);
+  document.addEventListener('pointercancel',function(){allPicksTapState=null;},true);
   document.addEventListener('click',function(e){
-    if(!((e.target&&e.target.closest&&e.target.closest('.ap-header-fixed'))||allPicksHeaderAtPoint(e.clientX,e.clientY)))return;
+    if(!allPicksHeadFromEvent(e))return;
     if(Date.now()-(window.__lastAllPicksPointerToggle||0)<700){
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -17599,21 +17625,42 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
     }
     return false;
   }
-  function toggleNativeSimpleFromEvent(e){
-    var head=accordionHeadAtPoint(e);
-    if(!head)return;
-    var now=Date.now();
-    if(now-(window.__fightLocksLastAccordionTap||0)<260){
-      e.preventDefault();
-      e.stopPropagation();
-      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-      return;
-    }
-    if(!toggleAnyCleanAccordion(head))return;
-    window.__fightLocksLastAccordionTap=now;
+  var accordionTapState=null;
+  function eventPoint(e){
+    var point=(e.changedTouches&&e.changedTouches[0])||(e.touches&&e.touches[0])||e;
+    return {x:point&&point.clientX,y:point&&point.clientY};
+  }
+  function stopAccordionEvent(e){
     e.preventDefault();
     e.stopPropagation();
     if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+  }
+  function beginAccordionTap(e){
+    var head=accordionHeadAtPoint(e);
+    if(!head)return;
+    var p=eventPoint(e);
+    accordionTapState={head:head,x:p.x,y:p.y,moved:false};
+  }
+  function moveAccordionTap(e){
+    if(!accordionTapState)return;
+    var p=eventPoint(e);
+    if(Math.abs((p.x||0)-(accordionTapState.x||0))>10||Math.abs((p.y||0)-(accordionTapState.y||0))>10){
+      accordionTapState.moved=true;
+    }
+  }
+  function finishAccordionTap(e){
+    var state=accordionTapState;
+    accordionTapState=null;
+    if(!state)return;
+    var head=accordionHeadAtPoint(e)||state.head;
+    if(state.moved||head!==state.head){
+      window.__fightLocksLastAccordionTap=Date.now();
+      stopAccordionEvent(e);
+      return;
+    }
+    if(!toggleAnyCleanAccordion(state.head))return;
+    window.__fightLocksLastAccordionTap=Date.now();
+    stopAccordionEvent(e);
   }
   function preventAccordionGhostClick(e){
     var head=accordionHeadAtPoint(e);
@@ -17622,9 +17669,7 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
       toggleAnyCleanAccordion(head);
       window.__fightLocksLastAccordionTap=Date.now();
     }
-    e.preventDefault();
-    e.stopPropagation();
-    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    stopAccordionEvent(e);
   }
   function oldToggleNativeSimpleFromEvent(e){
     var head=e.target&&e.target.closest&&e.target.closest(".fl-native-simple-head");
@@ -17636,8 +17681,14 @@ if(!firebaseDisabled&&ADMIN_ALWAYS_UNLOCKED)unlockAdminPanel();
     e.stopPropagation();
     if(e.stopImmediatePropagation)e.stopImmediatePropagation();
   }
-  window.addEventListener("pointerdown",toggleNativeSimpleFromEvent,true);
-  window.addEventListener("touchstart",toggleNativeSimpleFromEvent,true);
+  window.addEventListener("pointerdown",beginAccordionTap,true);
+  window.addEventListener("pointermove",moveAccordionTap,true);
+  window.addEventListener("pointerup",finishAccordionTap,true);
+  window.addEventListener("pointercancel",function(){accordionTapState=null;},true);
+  window.addEventListener("touchstart",beginAccordionTap,true);
+  window.addEventListener("touchmove",moveAccordionTap,true);
+  window.addEventListener("touchend",finishAccordionTap,true);
+  window.addEventListener("touchcancel",function(){accordionTapState=null;},true);
   window.addEventListener("click",preventAccordionGhostClick,true);
   var previousShowTab=window.showTab;
   if(typeof previousShowTab==="function"&&!previousShowTab.__flCleanAccordions){
@@ -20711,7 +20762,7 @@ window.refreshFightResultsForViews=async function(){
       'body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn.active,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn.active:not(.phone-lock-unavailable){background:linear-gradient(180deg,#fff2a8 0%,#d69e2e 45%,#744210 100%)!important;background-image:linear-gradient(180deg,#fff2a8 0%,#d69e2e 45%,#744210 100%)!important;border:2px solid rgba(255,236,168,.88)!important;color:#111827!important;-webkit-text-fill-color:#111827!important;text-shadow:0 1px 0 rgba(255,255,255,.56)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.70),0 10px 22px rgba(214,158,46,.24)!important}',
       'body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn.active *,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn.active:not(.phone-lock-unavailable) *{color:#111827!important;-webkit-text-fill-color:#111827!important;text-shadow:0 1px 0 rgba(255,255,255,.56)!important}',
       'body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn.active .lock-pts,body.embedded-readonly-preview.phone-design-preview #view-picks .lock-card .lock-btn.active:not(.phone-lock-unavailable) .lock-pts{background:rgba(17,24,39,.16)!important;background-image:none!important;border:1px solid rgba(17,24,39,.28)!important;color:#111827!important;-webkit-text-fill-color:#111827!important}',
-      'body.embedded-readonly-preview.phone-design-preview #view-mine .my-pick-detail>summary,body.embedded-readonly-preview.phone-design-preview #view-allpicks .ap-header{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important;-webkit-tap-highlight-color:rgba(246,212,107,.18)!important}'
+      'body.embedded-readonly-preview.phone-design-preview #view-mine .my-pick-detail>summary,body.embedded-readonly-preview.phone-design-preview #view-allpicks .ap-header,body.embedded-readonly-preview.phone-design-preview #view-allpicks .ap-header-fixed{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important;-webkit-tap-highlight-color:rgba(246,212,107,.18)!important}'
     ].join("");
     document.head.appendChild(style);
   }
@@ -20760,7 +20811,7 @@ window.refreshFightResultsForViews=async function(){
       if(!isPhonePreview())return;
       var summary=event.target&&event.target.closest&&event.target.closest("#view-mine .my-pick-detail>summary");
       if(summary)return {type:"my",el:summary};
-      var header=event.target&&event.target.closest&&event.target.closest("#view-allpicks .ap-header");
+      var header=event.target&&event.target.closest&&event.target.closest("#view-allpicks .ap-header,#view-allpicks .ap-header-fixed");
       if(header)return {type:"all",el:header};
       return null;
     }
@@ -20818,7 +20869,7 @@ window.refreshFightResultsForViews=async function(){
     }catch(e){return window.innerWidth<=760;}
   }
   function accordionTarget(event){
-    var target=event.target&&event.target.closest&&event.target.closest("#view-mine .my-pick-detail>summary,#view-allpicks .ap-header");
+    var target=event.target&&event.target.closest&&event.target.closest("#view-mine .my-pick-detail>summary,#view-allpicks .ap-header,#view-allpicks .ap-header-fixed");
     if(!target)return null;
     return target.matches("#view-mine .my-pick-detail>summary")?{type:"my",el:target}:{type:"all",el:target};
   }
