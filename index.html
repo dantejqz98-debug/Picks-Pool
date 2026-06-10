@@ -373,7 +373,7 @@ try{
   })();
 })();
 </script>
-<link rel="stylesheet" href="css/app.css?v=split-20260610bs">
+<link rel="stylesheet" href="css/app.css?v=split-20260610bu">
 
 </head>
 <body class="app-profile-locked">
@@ -1359,92 +1359,8 @@ try{
         <span>© 2026 Fight Locks. All rights reserved.</span>
         <span>Fight Locks provides platform access and pool-hosting tools only. No betting, wagering, payment processing, or prize handling is provided by Fight Locks.</span>
       </p>
-      <button class="feedback-fab" type="button" onclick="var m=document.getElementById('feedbackModal');if(m){var s=document.getElementById('feedbackStatus');if(s){s.textContent='';s.className='feedback-status';}m.hidden=false;m.removeAttribute('aria-hidden');m.classList.add('show');setTimeout(function(){var t=document.getElementById('feedbackMessageInput');if(t)t.focus();},0);}return false">Feedback</button>
     </div>
   </footer>
-  <div class="feedback-modal" id="feedbackModal" aria-hidden="true">
-    <div class="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
-      <button class="feedback-close" type="button" onclick="var m=document.getElementById('feedbackModal');if(m){m.classList.remove('show');m.hidden=true;m.setAttribute('aria-hidden','true');}return false">Close</button>
-      <div class="feedback-kicker">Fight Locks Feedback</div>
-      <h2 id="feedbackModalTitle">Send Feedback</h2>
-      <p class="feedback-copy">Tell us what felt confusing, broken, worth improving, or what you love about Fight Locks.</p>
-      <form class="feedback-form" onsubmit="event.preventDefault();var f=this;var s=document.getElementById('feedbackStatus');var b=document.getElementById('feedbackSubmitBtn');var msg=(document.getElementById('feedbackMessageInput').value||'').trim();if(!msg){if(s){s.className='feedback-status bad';s.textContent='Type your feedback first.';}return false;}if(b){b.disabled=true;b.textContent='Sending...';}if(s){s.className='feedback-status';s.textContent='Sending feedback...';}fetch('/.netlify/functions/send-feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:(document.getElementById('feedbackEmailInput').value||'').trim(),message:msg,pageUrl:location.href,poolId:(new URLSearchParams(location.search).get('pool')||''),userAgent:navigator.userAgent||''})}).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||'Feedback failed');if(s){s.className='feedback-status good';s.textContent='Feedback sent. Thank you.';}f.reset();setTimeout(function(){var m=document.getElementById('feedbackModal');if(m){m.classList.remove('show');m.hidden=true;m.setAttribute('aria-hidden','true');}},900);});}).catch(function(){if(s){s.className='feedback-status bad';s.textContent='Could not send feedback yet. Email team@fight-locks.com if it keeps happening.';}}).finally(function(){if(b){b.disabled=false;b.textContent='Submit Feedback';}});return false">
-        <label><span>Your email</span><input id="feedbackEmailInput" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Optional"></label>
-        <label><span>Feedback</span><textarea id="feedbackMessageInput" name="message" rows="5" maxlength="1600" required placeholder="Type your feedback here"></textarea></label>
-        <div class="feedback-actions">
-          <button type="button" onclick="var m=document.getElementById('feedbackModal');if(m){m.classList.remove('show');m.hidden=true;m.setAttribute('aria-hidden','true');}return false">Cancel</button>
-          <button class="primary" id="feedbackSubmitBtn" type="submit">Submit Feedback</button>
-        </div>
-        <div class="feedback-status" id="feedbackStatus"></div>
-      </form>
-    </div>
-  </div>
-  <script>
-  (function(){
-    function feedbackStatus(text,tone){
-      var el=document.getElementById("feedbackStatus");
-      if(!el)return;
-      el.classList.toggle("bad",tone==="bad");
-      el.classList.toggle("good",tone==="good");
-      el.textContent=text||"";
-    }
-    window.openFeedbackModal=function(){
-      var modal=document.getElementById("feedbackModal");
-      if(!modal)return false;
-      feedbackStatus("");
-      modal.hidden=false;
-      modal.removeAttribute("aria-hidden");
-      modal.classList.add("show");
-      setTimeout(function(){
-        var input=document.getElementById("feedbackMessageInput");
-        if(input)input.focus();
-      },0);
-      return false;
-    };
-    window.closeFeedbackModal=function(){
-      var modal=document.getElementById("feedbackModal");
-      if(!modal)return false;
-      modal.classList.remove("show");
-      modal.hidden=true;
-      modal.setAttribute("aria-hidden","true");
-      return false;
-    };
-    window.submitFeedback=async function(event){
-      if(event&&event.preventDefault)event.preventDefault();
-      var email=(document.getElementById("feedbackEmailInput")||{}).value||"";
-      var messageEl=document.getElementById("feedbackMessageInput");
-      var message=(messageEl&&messageEl.value||"").trim();
-      var btn=document.getElementById("feedbackSubmitBtn");
-      if(!message){feedbackStatus("Type your feedback first.","bad");return false;}
-      if(btn){btn.disabled=true;btn.textContent="Sending...";}
-      feedbackStatus("Sending feedback...");
-      try{
-        var response=await fetch("/.netlify/functions/send-feedback",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            email:email.trim(),
-            message:message,
-            pageUrl:location.href,
-            poolId:(new URLSearchParams(location.search).get("pool")||""),
-            userAgent:navigator.userAgent||""
-          })
-        });
-        var data={};
-        try{data=await response.json();}catch(e){}
-        if(!response.ok)throw new Error(data.error||"Feedback failed");
-        feedbackStatus("Feedback sent. Thank you.","good");
-        if(messageEl)messageEl.value="";
-        setTimeout(window.closeFeedbackModal,900);
-      }catch(error){
-        feedbackStatus("Could not send feedback yet. Email team@fight-locks.com if it keeps happening.","bad");
-      }finally{
-        if(btn){btn.disabled=false;btn.textContent="Submit Feedback";}
-      }
-      return false;
-    };
-  })();
-  </script>
   <div class="policy-modal" id="policyModal" aria-hidden="true">
     <div class="policy-dialog" role="dialog" aria-modal="true" aria-labelledby="policyModalTitle">
       <button class="policy-close" type="button" onclick="closePolicyModal()">Close</button>
@@ -2402,12 +2318,12 @@ try{
   </div>
 </div>
 
-<script src="js/permissions.js?v=split-20260610bs"></script>
-<script src="js/events.js?v=split-20260610bs"></script>
-<script src="js/picksData.js?v=split-20260610bs"></script>
-<script src="js/leaderboard.js?v=split-20260610bs"></script>
-<script type="module" src="js/app-main.js?v=split-20260610bs"></script>
-<script src="js/app-polish.js?v=split-20260610bs"></script>
+<script src="js/permissions.js?v=split-20260610bu"></script>
+<script src="js/events.js?v=split-20260610bu"></script>
+<script src="js/picksData.js?v=split-20260610bu"></script>
+<script src="js/leaderboard.js?v=split-20260610bu"></script>
+<script type="module" src="js/app-main.js?v=split-20260610bu"></script>
+<script src="js/app-polish.js?v=split-20260610bu"></script>
 
 
 
