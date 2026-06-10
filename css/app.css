@@ -2375,6 +2375,166 @@ body.god-mode .god-mode-view{
   }
 }
 
+/* iPhone Safari sometimes keeps the landing page near desktop width when a
+   single row is too wide. This catches that state and forces the public home
+   page to fit the visible phone screen instead of creating side-scroll. */
+@media(max-width:1100px){
+  body.landing-route-active,
+  body.app-profile-locked.landing-route-active{
+    width:100vw!important;
+    max-width:100vw!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+  }
+  body.landing-route-active #setupHome.fight-landing,
+  body.landing-route-active .fight-landing,
+  body.landing-route-active .fight-landing-inner,
+  body.landing-route-active #landingHomeContent{
+    width:100vw!important;
+    max-width:100vw!important;
+    min-width:0!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    overflow-x:hidden!important;
+    box-sizing:border-box!important;
+  }
+  body.landing-route-active .fight-landing *,
+  body.landing-route-active .fight-landing *:before,
+  body.landing-route-active .fight-landing *:after{
+    box-sizing:border-box!important;
+    max-width:100%!important;
+  }
+  body.landing-route-active .landing-nav{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:14px 12px 12px!important;
+    gap:11px!important;
+    overflow:hidden!important;
+  }
+  body.landing-route-active .landing-brand{
+    width:min(100%,250px)!important;
+    margin:0 auto!important;
+    justify-content:center!important;
+  }
+  body.landing-route-active .landing-brand img{
+    width:100%!important;
+    object-position:center!important;
+  }
+  body.landing-route-active .landing-auth{
+    width:100%!important;
+    max-width:100%!important;
+    align-items:center!important;
+  }
+  body.landing-route-active .landing-auth-actions{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  body.landing-route-active .landing-auth-actions button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    padding:0 5px!important;
+    font-size:clamp(13px,3.55vw,16px)!important;
+    letter-spacing:.055em!important;
+    white-space:normal!important;
+  }
+  body.landing-route-active .landing-account-row{
+    width:100%!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+  body.landing-route-active .landing-links{
+    width:100%!important;
+    max-width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:0!important;
+    padding:4px 0 0!important;
+    overflow:hidden!important;
+  }
+  body.landing-route-active .landing-links button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    padding:0 1px 8px!important;
+    justify-content:center!important;
+    white-space:normal!important;
+    text-align:center!important;
+    font-size:clamp(14px,3.7vw,18px)!important;
+    letter-spacing:.045em!important;
+  }
+  body.landing-route-active .landing-hero,
+  body.landing-route-active .landing-community-pool,
+  body.landing-route-active .landing-feature-rail{
+    width:calc(100vw - 18px)!important;
+    max-width:calc(100vw - 18px)!important;
+    min-width:0!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    overflow:hidden!important;
+  }
+  body.landing-route-active .landing-hero{
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  body.landing-route-active .landing-copy-panel{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  body.landing-route-active .landing-hero-brand-mark{
+    width:min(100%,310px)!important;
+  }
+  body.landing-route-active .landing-hero-support{
+    max-width:100%!important;
+  }
+  body.landing-route-active .landing-cta{
+    width:100%!important;
+    max-width:100%!important;
+    grid-template-columns:1fr!important;
+  }
+  body.landing-route-active .landing-community-pool{
+    grid-template-columns:1fr!important;
+    padding:16px 12px!important;
+  }
+  body.landing-route-active .landing-community-copy,
+  body.landing-route-active .landing-community-actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    justify-items:center!important;
+    text-align:center!important;
+  }
+  body.landing-route-active .landing-community-copy h2{
+    font-size:clamp(33px,10vw,48px)!important;
+    overflow-wrap:anywhere!important;
+  }
+  body.landing-route-active .landing-community-chips{
+    width:100%!important;
+    justify-content:center!important;
+  }
+  body.landing-route-active .landing-community-chips span{
+    max-width:100%!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    text-align:center!important;
+  }
+  body.landing-route-active .landing-feature-rail{
+    grid-template-columns:1fr!important;
+  }
+}
+
 
 /* === Freedom 250 poster background for the remaining non-title fights === */
 .fight-card:not(.title){
