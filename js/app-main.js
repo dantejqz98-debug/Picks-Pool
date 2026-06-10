@@ -1278,12 +1278,12 @@ function authFriendlyError(e){
   if(code==="auth/weak-password")return "Password needs at least 8 characters.";
   if(code==="auth/wrong-password"||code==="auth/invalid-credential"||code==="auth/user-not-found")return "We could not sign in with that email and password. Check both, or create a new account first.";
   if(code==="auth/too-many-requests")return "Firebase blocked attempts for a bit. Wait a minute, then try again.";
-  if(code==="auth/timeout")return (e&&e.message)||"Firebase did not answer. Check the internet connection, then try signing in again.";
+  if(code==="auth/timeout")return (e&&e.message)||"Sign in took longer than expected. Check the internet connection, then tap Sign In again.";
   if(code==="auth/network-request-failed")return "Could not reach Firebase right now, so your profile was not created yet. Check the internet connection, then tap Create Account again.";
   return (e&&e.message)||"Firebase could not complete that account step.";
 }
 function firebaseTimeoutError(action){
-  var err=new Error("Firebase is taking longer than expected while "+action+". Check the internet connection, then try again.");
+  var err=new Error("Sign in took longer than expected. Check the internet connection, then tap Sign In again.");
   err.code="auth/timeout";
   return err;
 }
@@ -1296,7 +1296,7 @@ function withFirebaseTimeout(promise,action,ms){
 }
 function showFirebaseStillTrying(action,ms){
   return setTimeout(function(){
-    var msg="Still connecting to Firebase while "+action+". Keep this tab open.";
+    var msg="Still "+action+". Keep this tab open.";
     setSetupMessage(msg);
     setMemberMessage(msg);
   },ms||12000);
@@ -5055,8 +5055,7 @@ window.signInExistingAccount=async function(){
   setSignInBusy(true);
   var stillTryingTimer=showFirebaseStillTrying("signing in",12000);
   try{
-	    await withFirebaseTimeout(setPersistence(auth,browserLocalPersistence),"preparing sign in",20000);
-	    var result=await withFirebaseTimeout(signInWithEmailAndPassword(auth,profileInputs.email,profileInputs.password),"signing in",45000);
+	    var result=await withFirebaseTimeout(signInWithEmailAndPassword(auth,profileInputs.email,profileInputs.password),"signing in",60000);
 	    currentUser=result.user;
       clearManualPoolOpen();
       clearStaleActiveProfile(currentUser);
