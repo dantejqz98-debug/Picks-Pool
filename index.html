@@ -7,6 +7,26 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"/>
 <script>
 try{
+  window.__fightLocksSetVisibleWidth=function(){
+    try{
+      var vv=window.visualViewport;
+      var widths=[
+        vv&&vv.width,
+        window.innerWidth,
+        document.documentElement&&document.documentElement.clientWidth,
+        screen&&Math.min(screen.width||0,screen.height||0)
+      ].filter(function(v){return v&&isFinite(v)&&v>0;});
+      var width=Math.floor(Math.min.apply(Math,widths));
+      if(width>0)document.documentElement.style.setProperty("--fl-visible-width",width+"px");
+    }catch(e){}
+  };
+  window.__fightLocksSetVisibleWidth();
+  window.addEventListener("resize",window.__fightLocksSetVisibleWidth,{passive:true});
+  window.addEventListener("orientationchange",function(){setTimeout(window.__fightLocksSetVisibleWidth,120);},{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener("resize",window.__fightLocksSetVisibleWidth,{passive:true});
+  document.addEventListener("DOMContentLoaded",window.__fightLocksSetVisibleWidth);
+}catch(e){}
+try{
   var fightLocksBootParams=new URLSearchParams(window.location.search);
   var fightLocksBootHash=String(window.location.hash||"").replace(/^#/,"").toLowerCase();
   window.__fightLocksInitialDevicePreviewHash=fightLocksBootHash;
@@ -373,7 +393,7 @@ try{
   })();
 })();
 </script>
-<link rel="stylesheet" href="css/app.css?v=split-20260610bw">
+<link rel="stylesheet" href="css/app.css?v=split-20260610bx">
 
 </head>
 <body class="app-profile-locked">
@@ -2318,12 +2338,12 @@ try{
   </div>
 </div>
 
-<script src="js/permissions.js?v=split-20260610bw"></script>
-<script src="js/events.js?v=split-20260610bw"></script>
-<script src="js/picksData.js?v=split-20260610bw"></script>
-<script src="js/leaderboard.js?v=split-20260610bw"></script>
-<script type="module" src="js/app-main.js?v=split-20260610bw"></script>
-<script src="js/app-polish.js?v=split-20260610bw"></script>
+<script src="js/permissions.js?v=split-20260610bx"></script>
+<script src="js/events.js?v=split-20260610bx"></script>
+<script src="js/picksData.js?v=split-20260610bx"></script>
+<script src="js/leaderboard.js?v=split-20260610bx"></script>
+<script type="module" src="js/app-main.js?v=split-20260610bx"></script>
+<script src="js/app-polish.js?v=split-20260610bx"></script>
 
 
 

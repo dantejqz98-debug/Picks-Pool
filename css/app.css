@@ -2375,14 +2375,44 @@ body.god-mode .god-mode-view{
   }
 }
 
+/* Final visible-viewport guard for iPhone Safari. Safari can report a larger
+   layout viewport than the actual visible phone screen after the address bar
+   changes, so use the JS-measured visible width for the public landing page. */
+@media(max-width:1100px){
+  body.landing-route-active,
+  body.app-profile-locked.landing-route-active,
+  body.landing-route-active #setupHome.fight-landing,
+  body.landing-route-active .fight-landing,
+  body.landing-route-active .fight-landing-inner,
+  body.landing-route-active #landingHomeContent,
+  body.landing-route-active .landing-nav{
+    width:var(--fl-visible-width,100%)!important;
+    max-width:var(--fl-visible-width,100%)!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+    box-sizing:border-box!important;
+  }
+  body.landing-route-active .landing-hero,
+  body.landing-route-active .landing-community-pool,
+  body.landing-route-active .landing-feature-rail{
+    width:calc(var(--fl-visible-width,100%) - 18px)!important;
+    max-width:calc(var(--fl-visible-width,100%) - 18px)!important;
+    min-width:0!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+}
+
 /* iPhone Safari sometimes keeps the landing page near desktop width when a
    single row is too wide. This catches that state and forces the public home
    page to fit the visible phone screen instead of creating side-scroll. */
 @media(max-width:1100px){
   body.landing-route-active,
   body.app-profile-locked.landing-route-active{
-    width:100vw!important;
-    max-width:100vw!important;
+    width:var(--fl-visible-width,100%)!important;
+    max-width:var(--fl-visible-width,100%)!important;
     min-width:0!important;
     overflow-x:hidden!important;
   }
@@ -2390,8 +2420,8 @@ body.god-mode .god-mode-view{
   body.landing-route-active .fight-landing,
   body.landing-route-active .fight-landing-inner,
   body.landing-route-active #landingHomeContent{
-    width:100vw!important;
-    max-width:100vw!important;
+    width:var(--fl-visible-width,100%)!important;
+    max-width:var(--fl-visible-width,100%)!important;
     min-width:0!important;
     margin-left:0!important;
     margin-right:0!important;
@@ -2410,8 +2440,8 @@ body.god-mode .god-mode-view{
     display:flex!important;
     flex-direction:column!important;
     align-items:center!important;
-    width:100vw!important;
-    max-width:100vw!important;
+    width:var(--fl-visible-width,100%)!important;
+    max-width:var(--fl-visible-width,100%)!important;
     min-width:0!important;
     margin:0!important;
     padding:14px 12px 12px!important;
@@ -2475,8 +2505,8 @@ body.god-mode .god-mode-view{
   body.landing-route-active .landing-hero,
   body.landing-route-active .landing-community-pool,
   body.landing-route-active .landing-feature-rail{
-    width:calc(100vw - 18px)!important;
-    max-width:calc(100vw - 18px)!important;
+    width:calc(var(--fl-visible-width,100%) - 18px)!important;
+    max-width:calc(var(--fl-visible-width,100%) - 18px)!important;
     min-width:0!important;
     margin-left:auto!important;
     margin-right:auto!important;
