@@ -2622,6 +2622,21 @@ body.god-mode .god-mode-view{
 .fight-card.title .bonus-section,.fight-card.title .pick-extra-section{margin-top:8px !important;padding-top:8px !important}
 .fight-card.title .bonus-note,.fight-card.title .pick-extra-note{margin-top:5px !important}
 .fight-card.title .prop-btn{padding-top:7px !important;padding-bottom:7px !important}
+#view-picks .fight-card.title,
+#myInlineEditor.make-picks-clone .fight-card.title,
+.preview-real .fight-card.title,
+.setup-preview .preview-real .fight-card.title{
+  background-image:linear-gradient(180deg,rgba(0,0,0,.58),rgba(0,0,0,.84)),linear-gradient(180deg,#080b10,#020203)!important;
+  background-size:100% 100%,100% 100%!important;
+  background-position:center center,center center!important;
+  background-repeat:no-repeat,no-repeat!important;
+}
+#view-picks .fight-card.title::after,
+#myInlineEditor.make-picks-clone .fight-card.title::after,
+.preview-real .fight-card.title::after,
+.setup-preview .preview-real .fight-card.title::after{
+  background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.18) 52%,rgba(0,0,0,.36))!important;
+}
 .lock-card{background:linear-gradient(180deg,rgba(28,28,28,.94),rgba(12,12,12,.94));border:1px solid rgba(214,158,46,.45);border-radius:16px;padding:14px;margin:14px 0;box-shadow:0 12px 26px rgba(0,0,0,.26)}
 .lock-title{color:#f6d46b;font-size:20px;font-weight:900;text-transform:uppercase;text-align:center;margin-bottom:6px}
 .lock-note{color:#d1d5db;font-size:12px;line-height:1.35;text-align:center;margin-bottom:12px}
